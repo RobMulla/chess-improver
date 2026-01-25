@@ -48,7 +48,12 @@ class OpeningAnalyzer:
             
             # Update stats
             opening_stats[opening_name]['games'] += 1
-            opening_stats[opening_name][result + 's'] += 1
+            if result == "win":
+                opening_stats[opening_name]['wins'] += 1
+            elif result == "draw":
+                opening_stats[opening_name]['draws'] += 1
+            elif result == "loss":
+                opening_stats[opening_name]['losses'] += 1
             opening_stats[opening_name]['eco'] = game.opening_eco
         
         # Update database

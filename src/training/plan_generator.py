@@ -2,6 +2,7 @@
 import json
 from datetime import datetime, date
 from typing import List, Dict, Optional
+from sqlalchemy import func
 from src.database.models import get_session, DailyPlan, Game, Position
 from src.analysis.opening_analyzer import OpeningAnalyzer
 
