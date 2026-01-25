@@ -1,0 +1,22 @@
+# Core dependencies
+requests>=2.31.0
+python-chess>=1.999
+stockfish>=3.28.0
+pandas>=2.0.0
+sqlalchemy>=2.0.0
+
+# AI/LLM
+openai>=1.0.0
+
+# Web interface
+flask>=3.0.0
+flask-cors>=4.0.0
+
+# Utilities
+python-dotenv>=1.0.0
+tqdm>=4.66.0
+pyyaml>=6.0.0
+
+# Development
+pytest>=7.4.0
+black>=23.0.0

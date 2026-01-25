@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daily Plan - Chess Improver</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+    <nav class="navbar">
+        <div class="nav-brand">♟️ Chess Improver</div>
+        <div class="nav-links">
+            <a href="/">Dashboard</a>
+            <a href="/plan" class="active">Daily Plan</a>
+            <a href="/games">Games</a>
+            <a href="/openings">Openings</a>
+            <a href="/insights">Insights</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <h1>Daily Training Plan</h1>
+        <p class="date">{{ plan_date.strftime('%A, %B %d, %Y') }}</p>
+
+        {% if plan %}
+        <div class="plan-container">
+            {% for task in plan.tasks %}
+            <div class="task-card {% if task.completed %}completed{% endif %}">
+                <div class="task-header">
+                    <input type="checkbox" class="task-checkbox" data-plan-id="{{ plan.id }}"
+                        data-task-id="{{ task.id }}" {% if task.completed %}checked{% endif %}>
+                    <div class="task-info">
+                        <h3>{{ task.title }}</h3>
+                        <span class="task-duration">{{ task.duration }}</span>
+                    </div>
+                </div>
+
+                {% if task.description %}
+                <p class="task-description">{{ task.description }}</p>
+                {% endif %}
+
+                {% if task.resources %}
+                <div class="task-resources">
+                    <strong>Resources:</strong>
+                    <ul>
+                        {% for resource in task.resources %}
+                        <li><a href="{{ resource }}" target="_blank">{{ resource }}</a></li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+
+            <div class="plan-summary">
+                {% set completed = plan.tasks|selectattr('completed')|list|length %}
+                <p>Progress: {{ completed }}/{{ plan.tasks|length }} tasks completed</p>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: {{ (completed / plan.tasks|length * 100)|int }}%"></div>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <p>No plan for this date.</p>
+            <form action="/plan/generate" method="POST">
+                <button type="submit" class="btn btn-primary">Generate Plan</button>
+            </form>
+        </div>
+        {% endif %}
+    </div>
+
+    <script>
+        document.querySelectorAll('.task-checkbox').forEach(checkbox => {
+            checkbox.addEventListener('change', async (e) => {
+                const planId = e.target.dataset.planId;
+                const taskId = e.target.dataset.taskId;
+
+                try {
+                    const response = await fetch(`/plan/task/${planId}/${taskId}/complete`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        }
+                    });
+
+                    if (response.ok) {
+                        // Toggle completed class on parent
+                        e.target.closest('.task-card').classList.toggle('completed');
+                        // Reload to update progress
+                        location.reload();
+                    }
+                } catch (error) {
+                    console.error('Error updating task:', error);
+                }
+            });
+        });
+    </script>
+</body>
+
+</html>

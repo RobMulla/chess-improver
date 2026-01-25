@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chess Improver Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-brand">♟️ Chess Improver</div>
+        <div class="nav-links">
+            <a href="/" class="active">Dashboard</a>
+            <a href="/plan">Daily Plan</a>
+            <a href="/games">Games</a>
+            <a href="/openings">Openings</a>
+            <a href="/insights">Insights</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <h1>Dashboard</h1>
+
+        <!-- Stats Overview -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value">{{ total_games }}</div>
+                <div class="stat-label">Total Games</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">{{ analyzed_games }}</div>
+                <div class="stat-label">Analyzed Games</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">
+                    {% if recent_accuracy %}
+                        {{ "%.1f"|format(recent_accuracy.metric_value) }}%
+                    {% else %}
+                        N/A
+                    {% endif %}
+                </div>
+                <div class="stat-label">Avg Accuracy (30d)</div>
+            </div>
+        </div>
+
+        <!-- Today's Plan Preview -->
+        <div class="section">
+            <h2>Today's Training Plan</h2>
+            {% if plan %}
+                <div class="plan-preview">
+                    {% for task in plan.tasks[:3] %}
+                        <div class="task-item">
+                            <input type="checkbox" {% if task.completed %}checked{% endif %} disabled>
+                            <span>{{ task.title }}</span>
+                        </div>
+                    {% endfor %}
+                    <a href="/plan" class="btn btn-primary">View Full Plan →</a>
+                </div>
+            {% else %}
+                <p>No plan for today yet.</p>
+                <form action="/plan/generate" method="POST">
+                    <button type="submit" class="btn btn-primary">Generate Today's Plan</button>
+                </form>
+            {% endif %}
+        </div>
+
+        <!-- Top Openings -->
+        <div class="section">
+            <h2>Your Top Openings</h2>
+            <div class="openings-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Opening</th>
+                            <th>Games</th>
+                            <th>Score</th>
+                            <th>Win Rate</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for opening in top_openings %}
+                        <tr>
+                            <td>{{ opening.name }}</td>
+                            <td>{{ opening.games_played }}</td>
+                            <td>+{{ opening.wins }} ={{ opening.draws }} -{{ opening.losses }}</td>
+                            <td>{{ "%.1f"|format(opening.win_rate * 100) }}%</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <a href="/openings" class="btn">View All Openings →</a>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Openings - Chess Improver</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+    <nav class="navbar">
+        <div class="nav-brand">♟️ Chess Improver</div>
+        <div class="nav-links">
+            <a href="/">Dashboard</a>
+            <a href="/plan">Daily Plan</a>
+            <a href="/games">Games</a>
+            <a href="/openings" class="active">Openings</a>
+            <a href="/insights">Insights</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <h1>Opening Repertoire</h1>
+
+        <div class="openings-grid">
+            {% for opening in openings %}
+            <div class="opening-card">
+                <div class="opening-header">
+                    <h3>{{ opening.name }}</h3>
+                    {% if opening.eco_code %}
+                    <span class="eco-badge">{{ opening.eco_code }}</span>
+                    {% endif %}
+                </div>
+
+                <div class="opening-stats">
+                    <div class="stat">
+                        <span class="stat-label">Games</span>
+                        <span class="stat-value">{{ opening.games_played }}</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Win Rate</span>
+                        <span class="stat-value">{{ "%.1f"|format(opening.win_rate * 100) }}%</span>
+                    </div>
+                    {% if opening.avg_accuracy %}
+                    <div class="stat">
+                        <span class="stat-label">Avg Accuracy</span>
+                        <span class="stat-value">{{ "%.1f"|format(opening.avg_accuracy) }}%</span>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div class="opening-record">
+                    <span class="wins">+{{ opening.wins }}</span>
+                    <span class="draws">={{ opening.draws }}</span>
+                    <span class="losses">-{{ opening.losses }}</span>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</body>
+
+</html>
