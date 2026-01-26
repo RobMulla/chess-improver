@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Opening Repertoire - Chess Improver</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.css">
+</head>
+
+<body>
+    <nav class="navbar">
+        <div class="nav-brand">♟️ Chess Improver</div>
+        <div class="nav-links">
+            <a href="/">Dashboard</a>
+            <a href="/plan">Daily Plan</a>
+            <a href="/games">Games</a>
+            <a href="/openings">Openings</a>
+            <a href="/practice">Practice</a>
+            <a href="/repertoire" class="active">Repertoire</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <h1>My Opening Repertoire</h1>
+        <p class="subtitle">Build and practice your ideal opening lines</p>
+
+        <div class="repertoire-actions">
+            <button id="new-line-btn" class="btn btn-primary">+ New Opening Line</button>
+        </div>
+
+        <div class="repertoire-container">
+            <div class="repertoire-list">
+                <h3>My Lines</h3>
+                {% if repertoires %}
+                {% for rep in repertoires %}
+                <div class="repertoire-card" data-id="{{ rep.id }}">
+                    <div class="rep-header">
+                        <h4>{{ rep.name }}</h4>
+                        <span class="color-badge {{ rep.color }}">{{ rep.color }}</span>
+                    </div>
+                    <p class="rep-notes">{{ rep.notes[:50] }}...</p>
+                    <div class="rep-actions">
+                        <button class="btn-small practice-btn" data-id="{{ rep.id }}">Practice</button>
+                        <button class="btn-small edit-btn" data-id="{{ rep.id }}">Edit</button>
+                    </div>
+                </div>
+                {% endfor %}
+                {% else %}
+                <p class="empty-message">No repertoire lines yet. Create your first one!</p>
+                {% endif %}
+            </div>
+
+            <div id="repertoire-builder" class="repertoire-builder" style="display: none;">
+                <div class="builder-header">
+                    <h3 id="builder-title">New Opening Line</h3>
+                    <button id="close-builder-btn" class="btn">✕</button>
+                </div>
+
+                <div class="builder-form">
+                    <label>
+                        Opening Name
+                        <input type="text" id="line-name" placeholder="e.g., Sicilian Dragon">
+                    </label>
+
+                    <label>
+                        Playing As
+                        <select id="line-color">
+                            <option value="white">White</option>
+                            <option value="black">Black</option>
+                        </select>
+                    </label>
+
+                    <label>
+                        Notes
+                        <textarea id="line-notes" rows="3" placeholder="Key ideas, plans, etc."></textarea>
+                    </label>
+                </div>
+
+                <div class="builder-board-container">
+                    <h4>Build Your Line</h4>
+                    <p class="instruction">Make moves on the board to build your repertoire. Each move creates a branch.
+                    </p>
+
+                    <div id="repertoire-board"></div>
+
+                    <div class="move-list">
+                        <h5>Moves</h5>
+                        <div id="moves-display"></div>
+                    </div>
+
+                    <div class="builder-controls">
+                        <button id="undo-move-btn" class="btn">↶ Undo</button>
+                        <button id="clear-board-btn" class="btn">Clear</button>
+                        <button id="save-line-btn" class="btn btn-primary">Save Line</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
+
+    <script>
+        let board = null;
+        let game = new Chess();
+        let currentRepertoireId = null;
+        let moveHistory = [];
+
+        function updateMovesDisplay() {
+            const moves = game.history({ verbose: true });
+            let html = '<div class="pgn">';
+
+            for (let i = 0; i < moves.length; i++) {
+                if (i % 2 === 0) {
+                    html += `<span class="move-number">${Math.floor(i / 2) + 1}.</span> `;
+                }
+                html += `<span class="move">${moves[i].san}</span> `;
+            }
+
+            html += '</div>';
+            $('#moves-display').html(html);
+        }
+
+        function onDrop(source, target) {
+            const move = game.move({
+                from: source,
+                to: target,
+                promotion: 'q'
+            });
+
+            if (move === null) return 'snapback';
+
+            updateMovesDisplay();
+            moveHistory.push(move);
+        }
+
+        $('#new-line-btn').click(function () {
+            currentRepertoireId = null;
+            $('#builder-title').text('New Opening Line');
+            $('#line-name').val('');
+            $('#line-color').val('white');
+            $('#line-notes').val('');
+            game.reset();
+            board.start();
+            updateMovesDisplay();
+            $('#repertoire-builder').show();
+        });
+
+        $('#close-builder-btn').click(function () {
+            $('#repertoire-builder').hide();
+        });
+
+        $('#undo-move-btn').click(function () {
+            game.undo();
+            board.position(game.fen());
+            updateMovesDisplay();
+        });
+
+        $('#clear-board-btn').click(function () {
+            game.reset();
+            board.start();
+            updateMovesDisplay();
+        });
+
+        $('#save-line-btn').click(async function () {
+            const data = {
+                name: $('#line-name').val(),
+                color: $('#line-color').val(),
+                notes: $('#line-notes').val(),
+                moves: game.history({ verbose: true }),
+                starting_position: game.fen()
+            };
+
+            if (!data.name) {
+                alert('Please enter a name for this line');
+                return;
+            }
+
+            const url = currentRepertoireId
+                ? `/repertoire/${currentRepertoireId}`
+                : '/repertoire/add';
+
+            const method = currentRepertoireId ? 'PUT' : 'POST';
+
+            try {
+                const response = await fetch(url, {
+                    method: method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                if (response.ok) {
+                    location.reload();
+                }
+            } catch (error) {
+                console.error('Error saving repertoire:', error);
+                alert('Error saving repertoire');
+            }
+        });
+
+        $('.practice-btn').click(function () {
+            const id = $(this).data('id');
+            window.location.href = `/repertoire/practice/${id}`;
+        });
+
+        $(document).ready(function () {
+            board = Chessboard('repertoire-board', {
+                draggable: true,
+                position: 'start',
+                onDrop: onDrop,
+                pieceTheme: 'https://chessboardjs.com/img/chesspieces/wikipedia/{piece}.png'
+            });
+
+            $(window).resize(board.resize);
+        });
+    </script>
+</body>
+
+</html>

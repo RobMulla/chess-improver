@@ -39,11 +39,36 @@ class Game(Base):
     opponent_rating = Column(Integer)
     opponent_name = Column(String(100))
     opening_name = Column(String(200))
-    opening_eco = Column(String(10))
+    opening_eco = Column(String)
     
-    # Analysis metadata
+    # Analysis flags
     analyzed = Column(Boolean, default=False)
+    starred = Column(Boolean, default=False)  # Allow users to favorite games
     analysis_date = Column(DateTime)
+    
+    # Game statistics
+    total_moves = Column(Integer)
+    player_accuracy = Column(Float)
+    opening_accuracy = Column(Float)
+    middlegame_accuracy = Column(Float)
+    endgame_accuracy = Column(Float)
+    
+    # Book analysis
+    book_moves = Column(Integer)
+    player_out_of_book_move = Column(Integer)  # Move number when player left book
+    opponent_out_of_book_move = Column(Integer)
+    first_mistake_move = Column(Integer)
+    
+    # Move classification counts
+    brilliant_moves = Column(Integer, default=0)
+    great_moves = Column(Integer, default=0)
+    best_moves = Column(Integer, default=0)
+    excellent_moves = Column(Integer, default=0)
+    good_moves = Column(Integer, default=0)
+    inaccuracy_moves = Column(Integer, default=0)
+    mistake_moves = Column(Integer, default=0)
+    miss_moves = Column(Integer, default=0)
+    blunder_moves = Column(Integer, default=0)
     
     # Relationships
     positions = relationship("Position", back_populates="game", cascade="all, delete-orphan")
@@ -71,6 +96,8 @@ class Position(Base):
     is_mistake = Column(Boolean, default=False)
     is_blunder = Column(Boolean, default=False)
     eval_drop = Column(Float)  # Centipawn loss
+    move_classification = Column(String(20))  # brilliant, great, best, excellent, good, book, inaccuracy, mistake, miss, blunder
+    game_phase = Column(String(20))  # opening, middlegame, endgame
     
     # Relationship
     game = relationship("Game", back_populates="positions")

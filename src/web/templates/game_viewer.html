@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game Viewer - Chess Improver</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.css">
+</head>
+
+<body>
+    <aside class="sidebar">
+        <div class="sidebar-brand">
+            <h1><span class="icon">♟️</span> Chess Improver</h1>
+        </div>
+
+        <nav class="sidebar-nav">
+            <div class="nav-section">
+                <div class="nav-section-title">Overview</div>
+                <a href="/" class="nav-link">
+                    <span class="nav-icon">📊</span>
+                    Dashboard
+                </a>
+                <a href="/plan" class="nav-link">
+                    <span class="nav-icon">📋</span>
+                    Daily Plan
+                </a>
+            </div>
+
+            <div class="nav-section">
+                <div class="nav-section-title">Analysis</div>
+                <a href="/games" class="nav-link active">
+                    <span class="nav-icon">🎮</span>
+                    Games
+                </a>
+                <a href="/openings" class="nav-link">
+                    <span class="nav-icon">📖</span>
+                    Openings
+                </a>
+                <a href="/insights" class="nav-link">
+                    <span class="nav-icon">💡</span>
+                    Insights
+                </a>
+            </div>
+
+            <div class="nav-section">
+                <div class="nav-section-title">Training</div>
+                <a href="/practice" class="nav-link">
+                    <span class="nav-icon">🎯</span>
+                    Practice Mistakes
+                </a>
+                <a href="/repertoire" class="nav-link">
+                    <span class="nav-icon">📚</span>
+                    My Repertoire
+                </a>
+            </div>
+        </nav>
+    </aside>
+
+    <main class="main-layout">
+        <header class="content-header">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <h1>{{ game.opening_name or 'Game Viewer' }}</h1>
+                    <p>{{ game.date.strftime('%B %d, %Y at %H:%M') if game.date else 'Date unknown' }}</p>
+                </div>
+                <div style="display: flex; gap: 0.5rem;">
+                    <button id="star-btn" class="btn {% if game.starred %}btn-primary{% else %}btn-secondary{% endif %}"
+                        onclick="toggleStar()">
+                        <span id="star-icon">{% if game.starred %}★{% else %}☆{% endif %}</span>
+                        <span id="star-text">{% if game.starred %}Starred{% else %}Star{% endif %}</span>
+                    </button>
+                    <a href="/games" class="btn btn-secondary">← Back to Games</a>
+                </div>
+            </div>
+        </header>
+
+        <div class="content-body">
+            <div style="display: grid; grid-template-columns: 1fr 400px; gap: 1.5rem;">
+                <!-- Chess Board -->
+                <div class="card">
+                    <div style="margin-bottom: 1.5rem;">
+                        <div
+                            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                            <div>
+                                <span
+                                    class="badge {% if is_win %}badge-success{% elif is_draw %}badge-warning{% else %}badge-error{% endif %}">
+                                    {{ result_text }}
+                                </span>
+                                <span class="badge badge-info">{{ game.platform }}</span>
+                                <span
+                                    class="badge {% if game.player_color == 'white' %}badge-info{% else %}badge-secondary{% endif %}">
+                                    Playing {{ game.player_color }}
+                                </span>
+                            </div>
+                            {% if game.game_url %}
+                            <a href="{{ game.game_url }}" target="_blank" class="btn btn-secondary">
+                                View on {{ game.platform }} ↗
+                            </a>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div id="game-board" style="max-width: 600px; margin: 0 auto;"></div>
+
+                    <div style="display: flex; gap: 0.5rem; justify-content: center; margin-top: 1.5rem;">
+                        <button id="btn-start" class="btn btn-secondary">⏮ Start</button>
+                        <button id="btn-prev" class="btn btn-secondary">← Prev</button>
+                        <button id="btn-next" class="btn btn-primary">Next →</button>
+                        <button id="btn-end" class="btn btn-secondary">End ⏭</button>
+                        <button id="btn-flip" class="btn btn-secondary">🔄 Flip</button>
+                    </div>
+
+                    <div
+                        style="text-align: center; margin-top: 1.5rem; padding: 1rem; background: var(--bg-tertiary); border-radius: 8px;">
+                        {% if not game.analyzed %}
+                        <p style="color: var(--text-muted); margin-bottom: 1rem;">This game hasn't been analyzed yet</p>
+                        {% else %}
+                        <p style="color: var(--text-muted); margin-bottom: 1rem;">Re-run analysis with latest analyzer
+                        </p>
+                        {% endif %}
+                        <button id="analyze-btn" class="btn btn-primary" onclick="analyzeGame()">
+                            <span id="analyze-text">{% if game.analyzed %}Re-analyze Game{% else %}Analyze Game{% endif
+                                %}</span>
+                            <span id="analyze-loading" style="display: none;">⏳ Analyzing...</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Move List & Info -->
+                <div>
+                    <!-- Game Info -->
+                    <div class="card" style="margin-bottom: 1.5rem;">
+                        <h3 style="margin-bottom: 1rem;">Game Info</h3>
+                        <div style="display: grid; gap: 0.5rem; font-size: 0.875rem;">
+                            <div style="display: flex; justify-content: space-between;">
+                                <span style="color: var(--text-muted);">Time Control:</span>
+                                <strong>{{ game.time_control or 'Unknown' }}</strong>
+                            </div>
+                            <div style="display: flex; justify-content: space-between;">
+                                <span style="color: var(--text-muted);">Rating:</span>
+                                <strong>{{ game.player_rating or '?' }}</strong>
+                            </div>
+                            <div style="display: flex; justify-content: space-between;">
+                                <span style="color: var(--text-muted);">Opening:</span>
+                                <strong
+                                    style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                    {{ game.opening_name or 'Unknown' }}
+                                </strong>
+                            </div>
+                            <div style="display: flex; justify-content: space-between;">
+                                <span style="color: var(--text-muted);">Total Moves:</span>
+                                <strong>{{ game.total_moves or '?' }}</strong>
+                            </div>
+                            {% if game.analyzed %}
+                            <div style="display: flex; justify-content: space-between;">
+                                <span style="color: var(--text-muted);">Status:</span>
+                                <span class="badge badge-success">✓ Analyzed</span>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Accuracy Stats -->
+                    {% if game.player_accuracy %}
+                    <div class="card" style="margin-bottom: 1.5rem;">
+                        <h3 style="margin-bottom: 1rem;">Accuracy</h3>
+                        <div style="display: grid; gap: 0.75rem; font-size: 0.875rem;">
+                            <div>
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 0.25rem;">
+                                    <span style="color: var(--text-muted);">Overall</span>
+                                    <strong style="color: var(--accent-primary);">{{ "%.1f"|format(game.player_accuracy)
+                                        }}%</strong>
+                                </div>
+                                <div
+                                    style="height: 6px; background: var(--bg-tertiary); border-radius: 3px; overflow: hidden;">
+                                    <div
+                                        style="width: {{ game.player_accuracy }}%; height: 100%; background: var(--accent-primary);">
+                                    </div>
+                                </div>
+                            </div>
+                            {% if game.opening_accuracy %}
+                            <div>
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 0.25rem;">
+                                    <span style="color: var(--text-muted);">Opening</span>
+                                    <strong>{{ "%.1f"|format(game.opening_accuracy) }}%</strong>
+                                </div>
+                                <div
+                                    style="height: 6px; background: var(--bg-tertiary); border-radius: 3px; overflow: hidden;">
+                                    <div
+                                        style="width: {{ game.opening_accuracy }}%; height: 100%; background: var(--info);">
+                                    </div>
+                                </div>
+                            </div>
+                            {% endif %}
+                            {% if game.middlegame_accuracy %}
+                            <div>
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 0.25rem;">
+                                    <span style="color: var(--text-muted);">Middlegame</span>
+                                    <strong>{{ "%.1f"|format(game.middlegame_accuracy) }}%</strong>
+                                </div>
+                                <div
+                                    style="height: 6px; background: var(--bg-tertiary); border-radius: 3px; overflow: hidden;">
+                                    <div
+                                        style="width: {{ game.middlegame_accuracy }}%; height: 100%; background: var(--warning);">
+                                    </div>
+                                </div>
+                            </div>
+                            {% endif %}
+                            {% if game.endgame_accuracy %}
+                            <div>
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 0.25rem;">
+                                    <span style="color: var(--text-muted);">Endgame</span>
+                                    <strong>{{ "%.1f"|format(game.endgame_accuracy) }}%</strong>
+                                </div>
+                                <div
+                                    style="height: 6px; background: var(--bg-tertiary); border-radius: 3px; overflow: hidden;">
+                                    <div
+                                        style="width: {{ game.endgame_accuracy }}%; height: 100%; background: var(--success);">
+                                    </div>
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Move Breakdown -->
+                    <div class="card" style="margin-bottom: 1.5rem;">
+                        <h3 style="margin-bottom: 1rem;">Move Quality</h3>
+                        <div style="display: grid; gap: 0.5rem; font-size: 0.875rem;">
+                            {% if game.brilliant_moves %}<div style="display: flex; justify-content: space-between;">
+                                <span>⭐ Brilliant</span><strong>{{ game.brilliant_moves }}</strong>
+                            </div>{% endif %}
+                            {% if game.great_moves %}<div style="display: flex; justify-content: space-between;">
+                                <span>🌟 Great</span><strong>{{ game.great_moves }}</strong>
+                            </div>{% endif %}
+                            {% if game.best_moves %}<div style="display: flex; justify-content: space-between;"><span>✓
+                                    Best</span><strong>{{ game.best_moves }}</strong></div>{% endif %}
+                            {% if game.excellent_moves %}<div style="display: flex; justify-content: space-between;">
+                                <span style="color: var(--success);">Excellent</span><strong>{{ game.excellent_moves
+                                    }}</strong>
+                            </div>{% endif %}
+                            {% if game.good_moves %}<div style="display: flex; justify-content: space-between;"><span
+                                    style="color: var(--info);">Good</span><strong>{{ game.good_moves }}</strong></div>
+                            {% endif %}
+                            {% if game.inaccuracy_moves %}<div style="display: flex; justify-content: space-between;">
+                                <span style="color: var(--warning);">Inaccuracy</span><strong>{{ game.inaccuracy_moves
+                                    }}</strong>
+                            </div>{% endif %}
+                            {% if game.mistake_moves %}<div style="display: flex; justify-content: space-between;"><span
+                                    style="color: var(--error);">Mistake</span><strong>{{ game.mistake_moves }}</strong>
+                            </div>{% endif %}
+                            {% if game.blunder_moves %}<div style="display: flex; justify-content: space-between;"><span
+                                    style="color: var(--error);">⚠️ Blunder</span><strong>{{ game.blunder_moves
+                                    }}</strong></div>{% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Move List -->
+                    <div class="card">
+                        <h3 style="margin-bottom: 1rem;">Moves</h3>
+                        <div id="move-list" style="max-height: 400px; overflow-y: auto;">
+                            <!-- Populated by JavaScript -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
+
+    <script>
+        const pgnString = {{ pgn | tojson }};
+        let board = null;
+        let game = new Chess();
+        let moves = [];
+        let currentMoveIndex = -1;
+
+        function loadPGN() {
+            const parsedGame = new Chess();
+            parsedGame.load_pgn(pgnString);
+            game = new Chess();
+            moves = parsedGame.history({ verbose: true });
+            displayMoveList();
+        }
+
+        function displayMoveList() {
+            let html = '<div style="font-family: monospace; line-height: 2;">';
+            for (let i = 0; i < moves.length; i++) {
+                if (i % 2 === 0) {
+                    html += `<div style="margin-bottom: 0.5rem;"><span style="color: var(--text-muted); margin-right: 0.5rem;">${Math.floor(i / 2) + 1}.</span>`;
+                }
+
+                const isActive = i === currentMoveIndex;
+                html += `<span class="move-item ${isActive ? 'active' : ''}" data-index="${i}" style="cursor: pointer; padding: 0.25rem 0.5rem; border-radius: 4px; ${isActive ? 'background: var(--accent-primary); color: white;' : 'background: var(--bg-tertiary);'}">${moves[i].san}</span> `;
+
+                if (i % 2 === 1 || i === moves.length - 1) {
+                    html += '</div>';
+                }
+            }
+            html += '</div>';
+            $('#move-list').html(html);
+
+            $('.move-item').click(function () {
+                const index = parseInt($(this).data('index'));
+                goToMove(index);
+            });
+        }
+
+        function goToMove(index) {
+            game = new Chess();
+            currentMoveIndex = -1;
+
+            for (let i = 0; i <= index && i < moves.length; i++) {
+                game.move(moves[i]);
+                currentMoveIndex = i;
+            }
+
+            board.position(game.fen());
+            displayMoveList();
+        }
+
+        function nextMove() {
+            if (currentMoveIndex < moves.length - 1) {
+                goToMove(currentMoveIndex + 1);
+            }
+        }
+
+        function prevMove() {
+            if (currentMoveIndex >= 0) {
+                goToMove(currentMoveIndex - 1);
+            }
+        }
+
+        $(document).ready(function () {
+            loadPGN();
+
+            const config = {
+                position: 'start',
+                pieceTheme: 'https://chessboardjs.com/img/chesspieces/wikipedia/{piece}.png',
+                orientation: '{{ game.player_color }}'
+            };
+
+            board = Chessboard('game-board', config);
+            $(window).resize(board.resize);
+
+            $('#btn-next').click(nextMove);
+            $('#btn-prev').click(prevMove);
+            $('#btn-start').click(() => goToMove(-1));
+            $('#btn-end').click(() => goToMove(moves.length - 1));
+            $('#btn-flip').click(() => board.flip());
+
+            // Keyboard shortcuts
+            $(document).keydown(function (e) {
+                if (e.key === 'ArrowLeft') {
+                    prevMove();
+                } else if (e.key === 'ArrowRight') {
+                    nextMove();
+                }
+            });
+        });
+
+        function toggleStar() {
+            fetch('/games/{{ game.id }}/star', {
+                method: 'POST'
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        const btn = document.getElementById('star-btn');
+                        const icon = document.getElementById('star-icon');
+                        const text = document.getElementById('star-text');
+
+                        if (data.starred) {
+                            btn.className = 'btn btn-primary';
+                            icon.textContent = '★';
+                            text.textContent = 'Starred';
+                        } else {
+                            btn.className = 'btn btn-secondary';
+                            icon.textContent = '☆';
+                            text.textContent = 'Star';
+                        }
+                    }
+                });
+        }
+
+        function analyzeGame() {
+            const btn = document.getElementById('analyze-btn');
+            const text = document.getElementById('analyze-text');
+            const loading = document.getElementById('analyze-loading');
+
+            btn.disabled = true;
+            text.style.display = 'none';
+            loading.style.display = 'inline';
+
+            fetch('/games/{{ game.id }}/analyze', {
+                method: 'POST'
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        window.location.reload();
+                    } else {
+                        alert('Analysis failed: ' + (data.error || 'Unknown error'));
+                        btn.disabled = false;
+                        text.style.display = 'inline';
+                        loading.style.display = 'none';
+                    }
+                })
+                .catch(error => {
+                    alert('Analysis failed: ' + error);
+                    btn.disabled = false;
+                    text.style.display = 'inline';
+                    loading.style.display = 'none';
+                });
+        }
+    </script>
+
+    <style>
+        .badge-secondary {
+            background: var(--bg-tertiary);
+            color: var(--text-secondary);
+        }
+    </style>
+</body>
+
+</html>

@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Insights - Chess Improver</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+    <aside class="sidebar">
+        <div class="sidebar-brand">
+            <h1><span class="icon">♟️</span> Chess Improver</h1>
+        </div>
+
+        <nav class="sidebar-nav">
+            <div class="nav-section">
+                <div class="nav-section-title">Overview</div>
+                <a href="/" class="nav-link">
+                    <span class="nav-icon">📊</span>
+                    Dashboard
+                </a>
+                <a href="/plan" class="nav-link">
+                    <span class="nav-icon">📋</span>
+                    Daily Plan
+                </a>
+            </div>
+
+            <div class="nav-section">
+                <div class="nav-section-title">Analysis</div>
+                <a href="/games" class="nav-link">
+                    <span class="nav-icon">🎮</span>
+                    Games
+                </a>
+                <a href="/openings" class="nav-link">
+                    <span class="nav-icon">📖</span>
+                    Openings
+                </a>
+                <a href="/insights" class="nav-link active">
+                    <span class="nav-icon">💡</span>
+                    Insights
+                </a>
+            </div>
+
+            <div class="nav-section">
+                <div class="nav-section-title">Training</div>
+                <a href="/practice" class="nav-link">
+                    <span class="nav-icon">🎯</span>
+                    Practice Mistakes
+                </a>
+                <a href="/repertoire" class="nav-link">
+                    <span class="nav-icon">📚</span>
+                    My Repertoire
+                </a>
+            </div>
+        </nav>
+    </aside>
+
+    <main class="main-layout">
+        <header class="content-header">
+            <h1>Insights</h1>
+            <p>Detailed analysis and statistics</p>
+        </header>
+
+        <div class="content-body">
+            {% if accuracy_insights %}
+            {% for insight in accuracy_insights %}
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">{{ insight.metric_name }}</h2>
+                    <span class="badge badge-info">{{ insight.time_period }}</span>
+                </div>
+                <div class="stat-value">{{ "%.1f"|format(insight.metric_value) }}%</div>
+                <p style="color: var(--text-muted); margin-top: 1rem;">
+                    {{ insight.insight_text }}
+                </p>
+            </div>
+            {% endfor %}
+            {% else %}
+            <div class="card">
+                <h2>No insights available yet</h2>
+                <p style="color: var(--text-muted);">
+                    Analyze more games to generate insights about your play.
+                </p>
+            </div>
+            {% endif %}
+        </div>
+    </main>
+</body>
+
+</html>

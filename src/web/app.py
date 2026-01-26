@@ -133,21 +133,249 @@ def games_list():
     )
 
 
-@app.route("/openings")
-def openings_list():
-    """List opening statistics."""
+@app.route("/games/<int:game_id>")
+def view_game(game_id):
+    """View a specific game."""
     session = get_session()
     
-    openings = (
-        session.query(Opening)
-        .filter(Opening.games_played >= 2)
-        .order_by(Opening.games_played.desc())
-        .all()
-    )
+    game = session.query(Game).get(game_id)
+    
+    if not game:
+        session.close()
+        return "Game not found", 404
+    
+    # Determine result text
+    is_win = (game.result == "1-0" and game.player_color == "white") or (game.result == "0-1" and game.player_color == "black")
+    is_draw = game.result == "1/2-1/2"
+    
+    if is_win:
+        result_text = "Win"
+    elif is_draw:
+        result_text = "Draw"
+    else:
+        result_text = "Loss"
     
     session.close()
     
-    return render_template("openings.html", openings=openings)
+    return render_template(
+        "game_viewer.html",
+        game=game,
+        pgn=game.pgn,
+        is_win=is_win,
+        is_draw=is_draw,
+        result_text=result_text
+    )
+
+
+@app.route("/games/<int:game_id>/star", methods=["POST"])
+def toggle_star(game_id):
+    """Toggle starred status of a game."""
+    session = get_session()
+    
+    game = session.query(Game).get(game_id)
+    
+    if not game:
+        session.close()
+        return jsonify({"error": "Game not found"}), 404
+    
+    game.starred = not game.starred
+    session.commit()
+    
+    starred = game.starred
+    session.close()
+    
+    return jsonify({"success": True, "starred": starred})
+
+
+@app.route("/games/<int:game_id>/analyze", methods=["POST"])
+def analyze_game_route(game_id):
+    """Analyze a specific game."""
+    from src.analysis.game_analyzer import GameAnalyzer
+    
+    session = get_session()
+    game = session.query(Game).get(game_id)
+    
+    if not game:
+        session.close()
+        return jsonify({"success": False, "error": "Game not found"}), 404
+    
+    session.close()
+    
+    try:
+        with GameAnalyzer() as analyzer:
+            result = analyzer.analyze_game(game, save_to_db=True)
+            
+        return jsonify({"success": True, "result": result})
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@app.route("/api/practice/positions", methods=["GET"])
+def get_practice_positions():
+    """Get mistake positions for practice with filters."""
+    session = get_session()
+    
+    # Get filter parameters
+    date_from = request.args.get("date_from")
+    date_to = request.args.get("date_to")
+    color = request.args.get("color", "both")
+    mistake_type = request.args.get("mistake_type", "both")
+    phase = request.args.get("phase", "all")
+    limit = request.args.get("limit", 20, type=int)
+    
+    # Base query: only mistakes from player moves
+    query = session.query(Position).join(Game).filter(
+        (Position.is_mistake == True) | (Position.is_blunder == True)
+    )
+    
+    # Apply filters
+    if date_from:
+        query = query.filter(Game.date >= date_from)
+    if date_to:
+        query = query.filter(Game.date <= date_to)
+    if color != "both":
+        query = query.filter(Game.player_color == color)
+    if mistake_type == "blunder":
+        query = query.filter(Position.is_blunder == True)
+    elif mistake_type == "mistake":
+        query = query.filter(Position.is_mistake == True, Position.is_blunder == False)
+    if phase != "all":
+        # Only filter if game_phase is set (not NULL)
+        query = query.filter(Position.game_phase == phase)
+    
+    # Get positions, ordered randomly
+    from sqlalchemy import func
+    positions = query.order_by(func.random()).limit(limit).all()
+    
+    # Format response
+    result = []
+    for pos in positions:
+        # Calculate game phase if not set
+        game_phase = pos.game_phase
+        if not game_phase:
+            # Use FEN-based classification if available
+            from src.analysis.move_classifier import MoveClassifier
+            if pos.fen and pos.move_number:
+                game_phase = MoveClassifier.classify_game_phase(pos.fen, pos.move_number)
+            elif pos.move_number:
+                # Fallback to simple move-based
+                if pos.move_number <= 15:
+                    game_phase = "opening"
+                elif pos.move_number <= 40:
+                    game_phase = "middlegame"
+                else:
+                    game_phase = "endgame"
+        
+        result.append({
+            "id": pos.id,
+            "fen": pos.fen,
+            "best_move": pos.best_move,
+            "player_move": pos.player_move,
+            "move_number": pos.move_number,
+            "game_phase": game_phase,
+            "eval_drop": pos.eval_drop,
+            "is_blunder": pos.is_blunder,
+            "game_id": pos.game_id,
+            "game": {
+                "opening_name": pos.game.opening_name,
+                "opponent_name": pos.game.opponent_name,
+                "opponent_rating": pos.game.opponent_rating,
+                "date": pos.game.date.isoformat() if pos.game.date else None
+            }
+        })
+    
+    session.close()
+    return jsonify({"positions": result, "count": len(result)})
+
+
+@app.route("/api/practice/check", methods=["POST"])
+def check_practice_move():
+    """Check if user's practice move is correct."""
+    data = request.get_json()
+    position_id = data.get("position_id")
+    user_move = data.get("user_move")
+    
+    session = get_session()
+    position = session.query(Position).get(position_id)
+    
+    if not position:
+        session.close()
+        return jsonify({"error": "Position not found"}), 404
+    
+    # Check if move matches best move
+    correct = user_move == position.best_move
+    
+    response = {
+        "correct": correct,
+        "best_move": position.best_move,
+        "user_move": user_move,
+        "eval_drop": position.eval_drop if not correct else 0
+    }
+    
+    session.close()
+    return jsonify(response)
+
+
+@app.route("/openings")
+def openings_list():
+    """List opening statistics."""
+    from sqlalchemy import func, case
+    
+    session = get_session()
+    
+    # Get filter parameters
+    color_filter = request.args.get('color')
+    
+    # Aggregate opening stats from games table
+    query = session.query(
+        Game.opening_name,
+        Game.player_color,
+        func.count(Game.id).label('total_games'),
+        func.sum(
+            case(
+                (
+                    (Game.result == '1-0') & (Game.player_color == 'white') |
+                    (Game.result == '0-1') & (Game.player_color == 'black'),
+                    1
+                ),
+                else_=0
+            )
+        ).label('wins'),
+        func.sum(case((Game.result == '1/2-1/2', 1), else_=0)).label('draws'),
+    ).filter(Game.opening_name != None).filter(Game.opening_name != '')
+    
+    # Apply color filter
+    if color_filter:
+        query = query.filter(Game.player_color == color_filter)
+    
+    query = query.group_by(Game.opening_name, Game.player_color).order_by(func.count(Game.id).desc())
+    
+    opening_stats = query.limit(100).all()
+    
+    # Format results
+    openings = []
+    for stat in opening_stats:
+        total = stat.total_games
+        wins = stat.wins or 0
+        draws = stat.draws or 0
+        losses = total - wins - draws
+        win_rate = (wins / total * 100) if total > 0 else 0
+        
+        openings.append({
+            'name': stat.opening_name,
+            'color': stat.player_color,
+            'games_played': total,
+            'wins': wins,
+            'draws': draws,
+            'losses': losses,
+            'win_rate': win_rate
+        })
+    
+    session.close()
+    
+    return render_template("openings.html", openings=openings, color_filter=color_filter)
 
 
 @app.route("/insights")
@@ -165,6 +393,62 @@ def insights():
     session.close()
     
     return render_template("insights.html", accuracy_insights=accuracy_insights)
+
+
+@app.route("/practice")
+def practice_mistakes():
+    """Interactive practice for past mistakes."""
+    return render_template("practice.html")
+
+
+@app.route("/repertoire")
+def repertoire():
+    """Opening repertoire builder."""
+    from src.database.models import OpeningRepertoire
+    
+    session = get_session()
+    repertoires = session.query(OpeningRepertoire).filter_by(is_active=True).all()
+    session.close()
+    
+    return render_template("repertoire.html", repertoires=repertoires)
+
+
+@app.route("/repertoire/add", methods=["POST"])
+def add_repertoire():
+    """Add new opening line to repertoire."""
+    from src.database.models import OpeningRepertoire
+    
+    data = request.json
+    session = get_session()
+    
+    repertoire = OpeningRepertoire(
+        name=data['name'],
+        color=data['color'],
+        starting_position=data.get('starting_position', 'start'),
+        moves=data.get('moves', []),
+        notes=data.get('notes', '')
+    )
+    
+    session.add(repertoire)
+    session.commit()
+    session.close()
+    
+    return jsonify({"success": True})
+
+
+@app.route("/repertoire/practice/<int:id>")
+def practice_repertoire(id):
+    """Practice specific repertoire line."""
+    from src.database.models import OpeningRepertoire
+    
+    session = get_session()
+    repertoire = session.query(OpeningRepertoire).get(id)
+    session.close()
+    
+    if not repertoire:
+        return "Repertoire not found", 404
+    
+    return render_template("practice_repertoire.html", repertoire=repertoire)
 
 
 if __name__ == "__main__":

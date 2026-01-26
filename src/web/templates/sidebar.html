@@ -1,0 +1,47 @@
+<aside class="sidebar">
+    <div class="sidebar-brand">
+        <h1><span class="icon">♟️</span> Chess Improver</h1>
+    </div>
+
+    <nav class="sidebar-nav">
+        <div class="nav-section">
+            <div class="nav-section-title">Overview</div>
+            <a href="/" class="nav-link {% if request.endpoint == 'index' %}active{% endif %}">
+                <span class="nav-icon">📊</span>
+                Dashboard
+            </a>
+            <a href="/plan" class="nav-link {% if request.endpoint == 'daily_plan' %}active{% endif %}">
+                <span class="nav-icon">📋</span>
+                Daily Plan
+            </a>
+        </div>
+
+        <div class="nav-section">
+            <div class="nav-section-title">Analysis</div>
+            <a href="/games" class="nav-link {% if 'game' in request.endpoint %}active{% endif %}">
+                <span class="nav-icon">🎮</span>
+                Games
+            </a>
+            <a href="/openings" class="nav-link {% if request.endpoint == 'openings_list' %}active{% endif %}">
+                <span class="nav-icon">📖</span>
+                Openings
+            </a>
+            <a href="/insights" class="nav-link {% if request.endpoint == 'insights' %}active{% endif %}">
+                <span class="nav-icon">💡</span>
+                Insights
+            </a>
+        </div>
+
+        <div class="nav-section">
+            <div class="nav-section-title">Training</div>
+            <a href="/practice" class="nav-link {% if request.endpoint == 'practice_mistakes' %}active{% endif %}">
+                <span class="nav-icon">🎯</span>
+                Practice Mistakes
+            </a>
+            <a href="/repertoire" class="nav-link {% if request.endpoint == 'repertoire' %}active{% endif %}">
+                <span class="nav-icon">📚</span>
+                My Repertoire
+            </a>
+        </div>
+    </nav>
+</aside>

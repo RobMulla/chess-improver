@@ -1,96 +1,218 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chess Improver Dashboard</title>
+    <title>Dashboard - Chess Improver</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
+
 <body>
-    <nav class="navbar">
-        <div class="nav-brand">♟️ Chess Improver</div>
-        <div class="nav-links">
-            <a href="/" class="active">Dashboard</a>
-            <a href="/plan">Daily Plan</a>
-            <a href="/games">Games</a>
-            <a href="/openings">Openings</a>
-            <a href="/insights">Insights</a>
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar">
+        <div class="sidebar-brand">
+            <h1><span class="icon">♟️</span> Chess Improver</h1>
         </div>
-    </nav>
 
-    <div class="container">
-        <h1>Dashboard</h1>
+        <nav class="sidebar-nav">
+            <div class="nav-section">
+                <div class="nav-section-title">Overview</div>
+                <a href="/" class="nav-link active">
+                    <span class="nav-icon">📊</span>
+                    Dashboard
+                </a>
+                <a href="/plan" class="nav-link">
+                    <span class="nav-icon">📋</span>
+                    Daily Plan
+                    {% if plan and plan.tasks %}
+                    <span class="nav-badge">{{ plan.tasks|length }}</span>
+                    {% endif %}
+                </a>
+            </div>
 
-        <!-- Stats Overview -->
-        <div class="stats-grid">
-            <div class="stat-card">
-                <div class="stat-value">{{ total_games }}</div>
-                <div class="stat-label">Total Games</div>
+            <div class="nav-section">
+                <div class="nav-section-title">Analysis</div>
+                <a href="/games" class="nav-link">
+                    <span class="nav-icon">🎮</span>
+                    Games
+                    <span class="nav-badge">{{ total_games }}</span>
+                </a>
+                <a href="/openings" class="nav-link">
+                    <span class="nav-icon">📖</span>
+                    Openings
+                </a>
+                <a href="/insights" class="nav-link">
+                    <span class="nav-icon">💡</span>
+                    Insights
+                </a>
             </div>
-            <div class="stat-card">
-                <div class="stat-value">{{ analyzed_games }}</div>
-                <div class="stat-label">Analyzed Games</div>
+
+            <div class="nav-section">
+                <div class="nav-section-title">Training</div>
+                <a href="/practice" class="nav-link">
+                    <span class="nav-icon">🎯</span>
+                    Practice Mistakes
+                </a>
+                <a href="/repertoire" class="nav-link">
+                    <span class="nav-icon">📚</span>
+                    My Repertoire
+                </a>
             </div>
-            <div class="stat-card">
-                <div class="stat-value">
-                    {% if recent_accuracy %}
-                        {{ "%.1f"|format(recent_accuracy.metric_value) }}%
-                    {% else %}
-                        N/A
+        </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-layout">
+        <header class="content-header">
+            <h1>Dashboard</h1>
+            <p>Your chess improvement overview</p>
+        </header>
+
+        <div class="content-body">
+            <!-- Statistics Grid -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value">{{ total_games }}</div>
+                    <div class="stat-label">Total Games</div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-value">{{ analyzed_games }}</div>
+                    <div class="stat-label">Analyzed Games</div>
+                </div>
+
+                {% if recent_accuracy %}
+                <div class="stat-card">
+                    <div class="stat-value">{{ "%.1f"|format(recent_accuracy.metric_value) }}%</div>
+                    <div class="stat-label">Avg Accuracy (30d)</div>
+                </div>
+                {% else %}
+                <div class="stat-card">
+                    <div class="stat-value">—</div>
+                    <div class="stat-label">Avg Accuracy (30d)</div>
+                </div>
+                {% endif %}
+
+                <div class="stat-card">
+                    <div class="stat-value">{{ ((analyzed_games / total_games * 100) if total_games > 0 else
+                        0)|round|int }}%</div>
+                    <div class="stat-label">Analysis Progress</div>
+                </div>
+            </div>
+
+            <!-- Today's Training Plan -->
+            {% if plan %}
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">Today's Training Plan</h2>
+                    <a href="/plan" class="btn btn-secondary">View Full Plan →</a>
+                </div>
+
+                {% if plan.tasks %}
+                <div class="task-list">
+                    {% for task in plan.tasks[:3] %}
+                    <div class="task-item">
+                        <div class="task-info">
+                            <h4>{{ task.title }}</h4>
+                            <p>{{ task.duration }}</p>
+                        </div>
+                        {% if task.completed %}
+                        <span class="badge badge-success">✓ Done</span>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+
+                    {% if plan.tasks|length > 3 %}
+                    <p style="color: var(--text-muted); margin-top: 1rem;">
+                        + {{ plan.tasks|length - 3 }} more tasks
+                    </p>
                     {% endif %}
                 </div>
-                <div class="stat-label">Avg Accuracy (30d)</div>
+                {% endif %}
             </div>
-        </div>
-
-        <!-- Today's Plan Preview -->
-        <div class="section">
-            <h2>Today's Training Plan</h2>
-            {% if plan %}
-                <div class="plan-preview">
-                    {% for task in plan.tasks[:3] %}
-                        <div class="task-item">
-                            <input type="checkbox" {% if task.completed %}checked{% endif %} disabled>
-                            <span>{{ task.title }}</span>
-                        </div>
-                    {% endfor %}
-                    <a href="/plan" class="btn btn-primary">View Full Plan →</a>
-                </div>
             {% else %}
-                <p>No plan for today yet.</p>
-                <form action="/plan/generate" method="POST">
-                    <button type="submit" class="btn btn-primary">Generate Today's Plan</button>
-                </form>
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">Today's Training Plan</h2>
+                    <form action="/plan/generate" method="POST" style="display: inline;">
+                        <button type="submit" class="btn btn-primary">Generate Today's Plan</button>
+                    </form>
+                </div>
+                <p style="color: var(--text-muted)">No plan for today yet. Generate one to get started!</p>
+            </div>
+            {% endif %}
+
+            <!-- Top Openings -->
+            {% if top_openings %}
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">Top Openings</h2>
+                    <a href="/openings" class="btn btn-secondary">View All →</a>
+                </div>
+
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Opening</th>
+                                <th>Games</th>
+                                <th>Record</th>
+                                <th>Win Rate</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for opening in top_openings %}
+                            <tr>
+                                <td style="font-weight: 600;">{{ opening.name }}</td>
+                                <td>{{ opening.games_played }}</td>
+                                <td>{{ opening.wins }}-{{ opening.draws }}-{{ opening.losses }}</td>
+                                <td>
+                                    <span
+                                        class="badge {% if opening.win_rate > 0.5 %}badge-success{% elif opening.win_rate > 0.4 %}badge-warning{% else %}badge-error{% endif %}">
+                                        {{ (opening.win_rate * 100)|round|int }}%
+                                    </span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
             {% endif %}
         </div>
+    </main>
 
-        <!-- Top Openings -->
-        <div class="section">
-            <h2>Your Top Openings</h2>
-            <div class="openings-table">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Opening</th>
-                            <th>Games</th>
-                            <th>Score</th>
-                            <th>Win Rate</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for opening in top_openings %}
-                        <tr>
-                            <td>{{ opening.name }}</td>
-                            <td>{{ opening.games_played }}</td>
-                            <td>+{{ opening.wins }} ={{ opening.draws }} -{{ opening.losses }}</td>
-                            <td>{{ "%.1f"|format(opening.win_rate * 100) }}%</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-            <a href="/openings" class="btn">View All Openings →</a>
-        </div>
-    </div>
+    <style>
+        .task-list {
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-md);
+        }
+
+        .task-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: var(--spacing-md);
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+        }
+
+        .task-item h4 {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        .task-item p {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+        }
+    </style>
 </body>
+
 </html>

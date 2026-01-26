@@ -28,6 +28,9 @@ class ChessComCollector(BaseCollector):
             response.raise_for_status()
             archives = response.json().get("archives", [])
             
+            # Reverse to download newest games first
+            archives = list(reversed(archives))
+            
             print(f"📦 Found {len(archives)} monthly archives")
             
             # Download games from each archive

@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Practice Mistakes - Chess Improver</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.css">
+</head>
+
+<body>
+    {% include 'sidebar.html' %}
+
+    <main class="main-layout">
+        <header class="content-header">
+            <h1>Practice Past Mistakes</h1>
+            <p>Find the best moves in positions where you previously made mistakes</p>
+        </header>
+
+        <div class="content-body">
+            <!-- Setup Panel -->
+            <div id="setup-panel" class="card">
+                <h3 style="margin-bottom: 1.5rem;">Select Practice Criteria</h3>
+
+                <div
+                    style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+                    <div>
+                        <label
+                            style="display: block; margin-bottom: 0.5rem; font-size: 0.875rem; color: var(--text-muted);">Playing
+                            As</label>
+                        <select id="filter-color" class="practice-select">
+                            <option value="both">Both Colors</option>
+                            <option value="white">White</option>
+                            <option value="black">Black</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label
+                            style="display: block; margin-bottom: 0.5rem; font-size: 0.875rem; color: var(--text-muted);">Mistake
+                            Type</label>
+                        <select id="filter-mistake" class="practice-select">
+                            <option value="both">All Mistakes</option>
+                            <option value="mistake">Mistakes Only</option>
+                            <option value="blunder">Blunders Only</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label
+                            style="display: block; margin-bottom: 0.5rem; font-size: 0.875rem; color: var(--text-muted);">Game
+                            Phase</label>
+                        <select id="filter-phase" class="practice-select">
+                            <option value="all">All Phases</option>
+                            <option value="opening">Opening</option>
+                            <option value="middlegame">Middlegame</option>
+                            <option value="endgame">Endgame</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label
+                            style="display: block; margin-bottom: 0.5rem; font-size: 0.875rem; color: var(--text-muted);">Number
+                            of Positions</label>
+                        <select id="filter-limit" class="practice-select">
+                            <option value="10">10 positions</option>
+                            <option value="20" selected>20 positions</option>
+                            <option value="50">50 positions</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 1rem; align-items: center;">
+                    <button id="start-btn" class="btn btn-primary" onclick="startPractice()">
+                        <span id="start-text">Start Practice</span>
+                        <span id="start-loading" style="display: none;">⏳ Loading...</span>
+                    </button>
+                    <span id="positions-count" style="color: var(--text-muted);"></span>
+                </div>
+            </div>
+
+            <!-- Practice Session Panel -->
+            <div id="practice-panel" style="display: none;">
+                <div style="display: grid; grid-template-columns: 1fr 400px; gap: 1.5rem;">
+                    <!-- Board Section -->
+                    <div class="card">
+                        <div style="margin-bottom: 1rem;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <div>
+                                    <span id="progress-text" class="badge badge-info">Position 1 of 20</span>
+                                    <span id="score-text" style="margin-left: 1rem; color: var(--text-muted);">Score:
+                                        0/0</span>
+                                </div>
+                                <button class="btn btn-secondary btn-sm" onclick="endPractice()">End Session</button>
+                            </div>
+                        </div>
+
+                        <div id="practice-board" style="max-width: 600px; margin: 0 auto;"></div>
+
+                        <div id="feedback-panel"
+                            style="margin-top: 1.5rem; padding: 1rem; border-radius: 8px; display: none;">
+                            <!-- Feedback will be shown here -->
+                        </div>
+
+                        <div style="display: flex; gap: 0.5rem; justify-content: center; margin-top: 1.5rem;">
+                            <button id="hint-btn" class="btn btn-secondary" onclick="showHint()"
+                                style="display: none;">💡 Hint</button>
+                            <button id="show-btn" class="btn btn-secondary" onclick="showAnswer()">Show Answer</button>
+                            <button id="next-btn" class="btn btn-primary" onclick="nextPosition()"
+                                style="display: none;">Next Position →</button>
+                        </div>
+                    </div>
+
+                    <!-- Info Panel -->
+                    <div>
+                        <div class="card" style="margin-bottom: 1.5rem;">
+                            <h3 style="margin-bottom: 1rem;">Position Context</h3>
+                            <div style="font-size: 0.875rem; color: var(--text-muted); line-height: 1.8;">
+                                <div><strong>Opening:</strong> <span id="ctx-opening">-</span></div>
+                                <div><strong>Opponent:</strong> <span id="ctx-opponent">-</span></div>
+                                <div><strong>Phase:</strong> <span id="ctx-phase">-</span></div>
+                                <div><strong>Move:</strong> <span id="ctx-move">-</span></div>
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <h3 style="margin-bottom: 1rem;">Instructions</h3>
+                            <div style="font-size: 0.875rem; color: var(--text-muted); line-height: 1.8;">
+                                <p>Find the <strong>best move</strong> for this position. This is where you made a
+                                    mistake in a real game.</p>
+                                <p style="margin-top: 0.75rem;">Click a piece and then click where you want to move it.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Results Panel -->
+            <div id="results-panel" style="display: none;" class="card">
+                <h2 style="margin-bottom: 1.5rem; text-align: center;">Practice Session Complete! 🎉</h2>
+
+                <div
+                    style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
+                    <div
+                        style="text-align: center; padding: 1.5rem; background: var(--bg-tertiary); border-radius: 8px;">
+                        <div style="font-size: 2.5rem; font-weight: bold; color: var(--accent-primary);"
+                            id="result-accuracy">-</div>
+                        <div style="color: var(--text-muted); margin-top: 0.5rem;">Accuracy</div>
+                    </div>
+                    <div
+                        style="text-align: center; padding: 1.5rem; background: var(--bg-tertiary); border-radius: 8px;">
+                        <div style="font-size: 2.5rem; font-weight: bold; color: var(--success);" id="result-correct">-
+                        </div>
+                        <div style="color: var(--text-muted); margin-top: 0.5rem;">Correct</div>
+                    </div>
+                    <div
+                        style="text-align: center; padding: 1.5rem; background: var(--bg-tertiary); border-radius: 8px;">
+                        <div style="font-size: 2.5rem; font-weight: bold; color: var(--error);" id="result-incorrect">-
+                        </div>
+                        <div style="color: var(--text-muted); margin-top: 0.5rem;">Incorrect</div>
+                    </div>
+                </div>
+
+                <div style="text-align: center;">
+                    <button class="btn btn-primary" onclick="location.reload()">Practice Again</button>
+                    <a href="/games" class="btn btn-secondary" style="margin-left: 0.5rem;">Back to Games</a>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
+
+    <script>
+        let practicePositions = [];
+        let currentIndex = 0;
+        let board = null;
+        let game = null;
+        let score = { correct: 0, total: 0 };
+        let currentAttempt = null;
+
+        async function startPractice() {
+            const startBtn = document.getElementById('start-btn');
+            const startText = document.getElementById('start-text');
+            const startLoading = document.getElementById('start-loading');
+
+            startBtn.disabled = true;
+            startText.style.display = 'none';
+            startLoading.style.display = 'inline';
+
+            const filters = {
+                color: document.getElementById('filter-color').value,
+                mistake_type: document.getElementById('filter-mistake').value,
+                phase: document.getElementById('filter-phase').value,
+                limit: document.getElementById('filter-limit').value
+            };
+
+            const params = new URLSearchParams(filters);
+            const response = await fetch(`/api/practice/positions?${params}`);
+            const data = await response.json();
+
+            if (data.positions && data.positions.length > 0) {
+                practicePositions = data.positions;
+                currentIndex = 0;
+                score = { correct: 0, total: 0 };
+
+                document.getElementById('setup-panel').style.display = 'none';
+                document.getElementById('practice-panel').style.display = 'block';
+
+                loadPosition();
+            } else {
+                alert('No matching positions found. Try different filters or analyze more games!');
+                startBtn.disabled = false;
+                startText.style.display = 'inline';
+                startLoading.style.display = 'none';
+            }
+        }
+
+        function loadPosition() {
+            if (currentIndex >= practicePositions.length) {
+                showResults();
+                return;
+            }
+
+            const pos = practicePositions[currentIndex];
+            game = new Chess(pos.fen);
+
+            // Reset UI
+            document.getElementById('feedback-panel').style.display = 'none';
+            document.getElementById('next-btn').style.display = 'none';
+            document.getElementById('show-btn').style.display = 'inline-block';
+            currentAttempt = null;
+
+            // Update progress
+            document.getElementById('progress-text').textContent = `Position ${currentIndex + 1} of ${practicePositions.length}`;
+            document.getElementById('score-text').textContent = `Score: ${score.correct}/${score.total}`;
+
+            // Update context
+            document.getElementById('ctx-opening').textContent = pos.game.opening_name || 'Unknown';
+            document.getElementById('ctx-opponent').textContent = `${pos.game.opponent_name} (${pos.game.opponent_rating || '?'})`;
+            document.getElementById('ctx-phase').textContent = pos.game_phase || 'Unknown';
+            document.getElementById('ctx-move').textContent = `Move ${pos.move_number}`;
+
+            // Setup board
+            if (!board) {
+                board = Chessboard('practice-board', {
+                    position: pos.fen,
+                    draggable: true,
+                    onDrop: handleMove,
+                    pieceTheme: 'https://chessboardjs.com/img/chesspieces/wikipedia/{piece}.png'
+                });
+            } else {
+                board.position(pos.fen);
+            }
+        }
+
+        function handleMove(source, target) {
+            const move = game.move({
+                from: source,
+                to: target,
+                promotion: 'q'
+            });
+
+            if (move === null) return 'snapback';
+
+            currentAttempt = move.from + move.to + (move.promotion || '');
+            checkMove();
+        }
+
+        async function checkMove() {
+            const pos = practicePositions[currentIndex];
+
+            const response = await fetch('/api/practice/check', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    position_id: pos.id,
+                    user_move: currentAttempt
+                })
+            });
+
+            const result = await response.json();
+            score.total++;
+
+            const feedbackPanel = document.getElementById('feedback-panel');
+            document.getElementById('show-btn').style.display = 'none';
+            document.getElementById('next-btn').style.display = 'inline-block';
+
+            if (result.correct) {
+                score.correct++;
+                feedbackPanel.style.background = 'var(--success-bg, #d4edda)';
+                feedbackPanel.style.color = 'var(--success)';
+                feedbackPanel.innerHTML = '<strong>✓ Correct!</strong> You found the best move.';
+            } else {
+                feedbackPanel.style.background = 'var(--error-bg, #f8d7da)';
+                feedbackPanel.style.color = 'var(--error)';
+                feedbackPanel.innerHTML = `<strong>✗ Incorrect.</strong> The best move was <strong>${formatMove(result.best_move)}</strong>. You played <strong>${formatMove(currentAttempt)}</strong>.`;
+            }
+
+            feedbackPanel.style.display = 'block';
+        }
+
+        function showAnswer() {
+            const pos = practicePositions[currentIndex];
+            score.total++;
+
+            const feedbackPanel = document.getElementById('feedback-panel');
+            feedbackPanel.style.background = 'var(--info-bg, #d1ecf1)';
+            feedbackPanel.style.color = 'var(--info)';
+            feedbackPanel.innerHTML = `<strong>ℹ Best move:</strong> <strong>${formatMove(pos.best_move)}</strong>`;
+            feedbackPanel.style.display = 'block';
+
+            document.getElementById('show-btn').style.display = 'none';
+            document.getElementById('next-btn').style.display = 'inline-block';
+        }
+
+        function nextPosition() {
+            currentIndex++;
+            game.reset();
+            loadPosition();
+        }
+
+        function showResults() {
+            document.getElementById('practice-panel').style.display = 'none';
+            document.getElementById('results-panel').style.display = 'block';
+
+            const accuracy = score.total > 0 ? Math.round((score.correct / score.total) * 100) : 0;
+            document.getElementById('result-accuracy').textContent = accuracy + '%';
+            document.getElementById('result-correct').textContent = score.correct;
+            document.getElementById('result-incorrect').textContent = score.total - score.correct;
+        }
+
+        function endPractice() {
+            if (confirm('Are you sure you want to end this practice session?')) {
+                showResults();
+            }
+        }
+
+        function formatMove(uci) {
+            if (!uci) return '-';
+            return uci;
+        }
+    </script>
+
+    <style>
+        .practice-select {
+            width: 100%;
+            padding: 0.5rem;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-subtle);
+            border-radius: 6px;
+            color: var(--text-primary);
+            font-size: 0.875rem;
+        }
+
+        .practice-select:focus {
+            outline: none;
+            border-color: var(--accent-primary);
+        }
+    </style>
+</body>
+
+</html>

@@ -25,7 +25,7 @@ class GameAnalyzer:
 
     def analyze_game(self, game: Game, save_to_db: bool = True) -> Dict:
         """
-        Analyze a complete game.
+        Analyze a complete game with detailed statistics.
         
         Args:
             game: Game object from database
@@ -34,6 +34,11 @@ class GameAnalyzer:
         Returns:
             Dict with analysis summary
         """
+        from src.analysis.move_classifier import MoveClassifier
+        
+        # Merge game into this session to avoid detached instance issues  
+        game = self.session.merge(game)
+        
         print(f"🔍 Analyzing game {game.game_id}...")
         
         try:
@@ -45,18 +50,29 @@ class GameAnalyzer:
                 print(f"⚠️ Could not parse PGN for game {game.game_id}")
                 return {}
             
-            # Analyze positions
-            board = chess_game.board()
+            # Initialize counters
             positions_data = []
-            eval_drops = []
-            mistakes = 0
-            blunders = 0
+            move_counts = {
+                'brilliant': 0, 'great': 0, 'best': 0, 'excellent': 0, 
+                'good': 0, 'book': 0, 'inaccuracy': 0, 'mistake': 0, 
+                'miss': 0, 'blunder': 0
+            }
+            
+            opening_classifications = []
+            middlegame_classifications = []
+            endgame_classifications = []
+            all_classifications = []
             
             prev_eval = 0
             move_number = 0
+            board = chess_game.board()
             
             for move in chess_game.mainline_moves():
                 move_number += 1
+                
+                # Get current FEN before making the move
+                current_fen = board.fen()
+                phase = MoveClassifier.classify_game_phase(current_fen, move_number)
                 
                 # Get evaluation before the move
                 analysis = self.analyzer.analyze_position(board)
@@ -70,20 +86,30 @@ class GameAnalyzer:
                     (not is_white_turn and game.player_color == "black")
                 )
                 
-                # Classify move quality (only for player moves)
-                move_classification = {"is_mistake": False, "is_blunder": False, "eval_drop": 0}
+                # Classify move (only for player moves)
+                move_class = None
                 if is_player_move and move_number > 1:
-                    move_classification = self.analyzer.classify_move(
-                        prev_eval, curr_eval, is_white_turn
+                    # TODO: Add book move detection
+                    is_book = False
+                    
+                    move_class = MoveClassifier.classify_move(
+                        prev_eval, curr_eval, curr_eval, is_white_turn, is_book
                     )
                     
-                    if move_classification["is_mistake"]:
-                        mistakes += 1
-                    if move_classification["is_blunder"]:
-                        blunders += 1
+                    # Count by classification
+                    classification = move_class['classification']
+                    if classification in move_counts:
+                        move_counts[classification] += 1
                     
-                    # Track eval drops for accuracy
-                    eval_drops.append(max(0, move_classification["eval_drop"]))
+                    # Track by phase
+                    if phase == 'opening':
+                        opening_classifications.append(move_class)
+                    elif phase == 'middlegame':
+                        middlegame_classifications.append(move_class)
+                    else:
+                        endgame_classifications.append(move_class)
+                    
+                    all_classifications.append(move_class)
                 
                 # Store position data
                 position_data = {
@@ -93,9 +119,11 @@ class GameAnalyzer:
                     "evaluation": curr_eval,
                     "best_move": best_move,
                     "player_move": move.uci(),
-                    "is_mistake": move_classification["is_mistake"],
-                    "is_blunder": move_classification["is_blunder"],
-                    "eval_drop": move_classification["eval_drop"],
+                    "is_mistake": move_class['is_mistake'] if move_class else False,
+                    "is_blunder": move_class['is_blunder'] if move_class else False,
+                    "eval_drop": move_class['eval_drop'] if move_class else 0,
+                    "move_classification": move_class['classification'] if move_class else None,
+                    "game_phase": phase,
                 }
                 positions_data.append(position_data)
                 
@@ -103,31 +131,39 @@ class GameAnalyzer:
                 board.push(move)
                 prev_eval = -curr_eval  # Flip for next side
             
-            # Calculate accuracy
-            accuracy = self.analyzer.calculate_accuracy(eval_drops) if eval_drops else None
+            # Calculate accuracies
+            overall_accuracy = MoveClassifier.calculate_accuracy_from_moves(all_classifications)
+            opening_accuracy = MoveClassifier.calculate_accuracy_from_moves(opening_classifications)
+            middlegame_accuracy = MoveClassifier.calculate_accuracy_from_moves(middlegame_classifications)
+            endgame_accuracy = MoveClassifier.calculate_accuracy_from_moves(endgame_classifications)
             
-            # Save to database
-            if save_to_db:
-                self._save_analysis(game, positions_data)
-            
+            # Prepare summary
             summary = {
                 "game_id": game.id,
                 "total_moves": move_number,
-                "mistakes": mistakes,
-                "blunders": blunders,
-                "accuracy": accuracy,
+                "player_accuracy": overall_accuracy,
+                "opening_accuracy": opening_accuracy,
+                "middlegame_accuracy": middlegame_accuracy,
+                "endgame_accuracy": endgame_accuracy,
+                "move_counts": move_counts,
                 "analyzed": True,
             }
             
-            print(f"  ✓ Moves: {move_number} | Mistakes: {mistakes} | Blunders: {blunders} | Accuracy: {accuracy}%")
+            # Save to database
+            if save_to_db:
+                self._save_analysis(game, positions_data, summary)
+            
+            print(f"  ✓ Moves: {move_number} | Accuracy: {overall_accuracy}% | Mistakes: {move_counts['mistake']} | Blunders: {move_counts['blunder']}")
             
             return summary
             
         except Exception as e:
             print(f"❌ Error analyzing game: {e}")
+            import traceback
+            traceback.print_exc()
             return {}
 
-    def _save_analysis(self, game: Game, positions_data: List[Dict]):
+    def _save_analysis(self, game: Game, positions_data: List[Dict], summary: Dict):
         """Save analysis results to database."""
         try:
             # Delete existing positions for this game
@@ -138,15 +174,37 @@ class GameAnalyzer:
                 position = Position(**pos_data)
                 self.session.add(position)
             
-            # Update game as analyzed
+            # Update game with statistics
             game.analyzed = True
             game.analysis_date = datetime.utcnow()
+            game.total_moves = summary['total_moves']
+            game.player_accuracy = summary['player_accuracy']
+            game.opening_accuracy = summary['opening_accuracy']
+            game.middlegame_accuracy = summary['middlegame_accuracy']
+            game.endgame_accuracy = summary['endgame_accuracy']
             
+            # Update move counts
+            move_counts = summary['move_counts']
+            game.brilliant_moves = move_counts.get('brilliant', 0)
+            game.great_moves = move_counts.get('great', 0)
+            game.best_moves = move_counts.get('best', 0)
+            game.excellent_moves = move_counts.get('excellent', 0)
+            game.good_moves = move_counts.get('good', 0)
+            game.inaccuracy_moves = move_counts.get('inaccuracy', 0)
+            game.mistake_moves = move_counts.get('mistake', 0)
+            game.miss_moves = move_counts.get('miss', 0)
+            game.blunder_moves = move_counts.get('blunder', 0)
+            
+            # Explicitly add to session and commit
+            self.session.add(game)
             self.session.commit()
+            print(f"  💾 Saved to database")
             
         except Exception as e:
             self.session.rollback()
             print(f"❌ Error saving analysis: {e}")
+            import traceback
+            traceback.print_exc()
 
     def analyze_unanalyzed_games(self, limit: Optional[int] = None):
         """Analyze all unanalyzed games in database."""
