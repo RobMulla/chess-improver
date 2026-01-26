@@ -1,7 +1,7 @@
 """Flask web application for chess improvement system."""
 from flask import Flask, render_template, request, jsonify, redirect, url_for
 from datetime import datetime, date
-from src.database.models import get_session, DailyPlan, Game, Opening, Insight
+from src.database.models import get_session, DailyPlan, Game, Opening, Insight, Position
 from src.training.plan_generator import PlanGenerator
 from sqlalchemy import func
 import json
