@@ -3,16 +3,17 @@ from typing import Dict, Optional
 
 
 class MoveClassifier:
-    """Classify chess moves based on evaluation and context."""
+    """Classifies chess moves based on evaluation changes."""
     
-    # Classification thresholds in centipawns
-    BRILLIANT_THRESHOLD = 100  # Sacrificial move that maintains advantage
-    BEST_THRESHOLD = 10
-    EXCELLENT_THRESHOLD = 25
-    GOOD_THRESHOLD = 50
-    INACCURACY_THRESHOLD = 100
-    MISTAKE_THRESHOLD = 200
-    # Blunder is anything above MISTAKE_THRESHOLD
+    # Thresholds for move classification (centipawns)
+    # Calibrated to match Chess.com's analysis system
+    BRILLIANT_THRESHOLD = 200  # Sacrificial move that maintains advantage
+    BEST_THRESHOLD = 15       # Near-perfect move (< 15cp loss)
+    EXCELLENT_THRESHOLD = 40   # Very good move (15-40cp loss)
+    GOOD_THRESHOLD = 80        # Decent move (40-80cp loss)
+    INACCURACY_THRESHOLD = 150  # Questionable move (80-150cp loss)
+    MISTAKE_THRESHOLD = 300     # Clear mistake (150-300cp loss)
+    # Blunder is anything above MISTAKE_THRESHOLD (300cp+)
     
     @staticmethod
     def classify_move(
@@ -54,7 +55,7 @@ class MoveClassifier:
         # Ensure positive
         eval_drop = max(0, eval_drop)
         
-        # Classify based on thresholds
+        # Classify based on thresholds (Chess.com-style)
         classification = "best"
         is_mistake = False
         is_blunder = False
@@ -72,20 +73,21 @@ class MoveClassifier:
         elif eval_drop < MoveClassifier.MISTAKE_THRESHOLD:
             classification = "mistake"
             is_mistake = True
+            is_miss = True
         else:
             classification = "blunder"
             is_blunder = True
             is_mistake = True
         
         # Detect "Great" moves (best move in critical position)
-        # Critical = evaluation swing potential > 200cp
+        # Critical = position with high evaluation swing potential (>300cp range)
         if classification == "best":
-            position_complexity = abs(best_eval) + abs(prev_eval)
-            if position_complexity > 200:
+            position_complexity = abs(best_eval - prev_eval)
+            if position_complexity > 300:
                 classification = "great"
         
-        # TODO: Add brilliant move detection (sacrificial best moves)
-        # This requires checking material balance before/after
+        # TODO: Detect "Brilliant" moves (sacrifices that work)
+        # Requires checking material balance before/after
         
         return {
             "classification": classification,
