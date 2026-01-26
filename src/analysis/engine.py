@@ -63,14 +63,30 @@ class StockfishAnalyzer:
 
     def analyze_position(self, board: chess.Board) -> Dict:
         """
-        Analyze a position.
+        Analyze a position with Redis caching for speed.
         
         Returns:
             Dict with 'evaluation', 'best_move', 'mate_in' (if applicable)
         """
         if not self.engine:
             raise RuntimeError("Engine not connected. Call connect() first.")
+        
+        # Try cache first
+        from src.analysis.cache import get_cache
+        fen = board.fen()
+        cache = get_cache()
+        cached = cache.get_evaluation(fen)
+        
+        if cached is not None:
+            # Convert cached format to expected format
+            return {
+                "evaluation": cached.get("score", 0),
+                "best_move": cached.get("best_move"),
+                "mate_in": None,  # Not cached currently
+                "depth": cached.get("depth", 0),
+            }
 
+        # Cache miss - analyze with Stockfish
         try:
             info = self.engine.analyse(
                 board,
@@ -91,12 +107,21 @@ class StockfishAnalyzer:
             
             best_move = info.get("pv", [None])[0]
             
-            return {
+            result = {
                 "evaluation": cp_score,
                 "best_move": best_move.uci() if best_move else None,
                 "mate_in": mate_info,
                 "depth": info.get("depth", 0),
             }
+            
+            # Cache for next time
+            cache.set_evaluation(fen, {
+                "score": cp_score,
+                "best_move": result["best_move"],
+                "depth": result["depth"]
+            })
+            
+            return result
             
         except Exception as e:
             print(f"⚠️ Analysis error: {e}")
