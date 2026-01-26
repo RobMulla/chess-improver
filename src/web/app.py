@@ -404,6 +404,7 @@ def practice_mistakes():
 @app.route("/moves")
 def moves_browser():
     """Browse all analyzed positions/moves."""
+    from sqlalchemy.orm import joinedload
     session = get_session()
     
     # Get filters
@@ -412,8 +413,11 @@ def moves_browser():
     page = request.args.get("page", 1, type=int)
     per_page = 50
     
-    # Base query
-    query = session.query(Position).join(Game).filter(Position.move_classification.isnot(None))
+    # Base query with eager loading of game relationship
+    query = (session.query(Position)
+             .join(Game)
+             .options(joinedload(Position.game))  # Eager load to prevent DetachedInstanceError
+             .filter(Position.move_classification.isnot(None)))
     
     # Apply filters
     if classification:
@@ -428,7 +432,8 @@ def moves_browser():
     # Get paginated results
     positions = query.order_by(Position.id.desc()).offset((page - 1) * per_page).limit(per_page).all()
     
-    session.close()
+    # Don't close session yet - needed for template rendering
+    # session.close()  # REMOVED - let Flask handle cleanup
     
     return render_template("moves.html", 
                          positions=positions,
