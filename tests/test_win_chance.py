@@ -20,24 +20,24 @@ class TestCentipawnsToWinChance:
         assert abs(centipawns_to_win_chance(0) - 50.0) < 0.1
     
     def test_small_advantage(self):
-        """Test +100cp ≈ 64% win chance."""
+        """Test +100cp ≈ 59% win chance."""
         win_chance = centipawns_to_win_chance(100)
-        assert 63 < win_chance < 65
+        assert 58 < win_chance < 60
     
     def test_significant_advantage(self):
-        """Test +300cp ≈ 84% win chance."""
+        """Test +300cp ≈ 75% win chance."""
         win_chance = centipawns_to_win_chance(300)
-        assert 83 < win_chance < 85
+        assert 74 < win_chance < 76
     
     def test_winning_position(self):
-        """Test +600cp ≈ 95% win chance."""
+        """Test +600cp ≈ 90% win chance."""
         win_chance = centipawns_to_win_chance(600)
-        assert 94 < win_chance < 96
+        assert 89 < win_chance < 91
     
     def test_disadvantage(self):
-        """Test -300cp ≈ 16% win chance."""
+        """Test -300cp ≈ 25% win chance."""
         win_chance = centipawns_to_win_chance(-300)
-        assert 15 < win_chance < 17
+        assert 24 < win_chance < 26
     
     def test_symmetric(self):
         """Test that +X and -X are symmetric around 50%."""
@@ -65,15 +65,15 @@ class TestWinChanceLoss:
         """Test small mistake for white."""
         # Drop from +100 to 0 (equal)
         loss = win_chance_loss(100, 0, is_white_turn=True)
-        # Should lose about 14% win chance (64% → 50%)
-        assert 13 < loss < 15
+        # Should lose about 9% win chance (59% → 50%)
+        assert 8 < loss < 10
     
     def test_big_blunder_white(self):
         """Test blunder for white."""
         # Drop from +100 to -300 (now losing)
         loss = win_chance_loss(100, -300, is_white_turn=True)
-        # Should lose about 48% win chance (64% → 16%)
-        assert 47 < loss < 49
+        # Should lose about 34% win chance (59% → 25%)
+        assert 33 < loss < 35
     
     def test_can_not_gain(self):
         """Test that win% loss is never negative."""
