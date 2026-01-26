@@ -24,7 +24,10 @@ class MoveClassifier:
         is_book_move: bool = False
     ) -> Dict:
         """
-        Classify a move based on evaluation drop.
+        Classify a move based on WIN% loss (not centipawns).
+        
+        Uses Lichess's Win% conversion for accurate classification
+        that matches Chess.com/Lichess standards.
         
         Args:
             prev_eval: Evaluation before move (in centipawns)
@@ -34,79 +37,66 @@ class MoveClassifier:
             is_book_move: Whether move is from opening book
             
         Returns:
-            Dict with classification, eval_drop, and flags
+            Dict with classification, eval_drop, win_loss, and flags
         """
+        from src.analysis.win_chance import win_chance_loss, classify_by_win_loss
+        
         if is_book_move:
             return {
                 "classification": "book",
                 "eval_drop": 0,
+                "win_loss": 0,
                 "is_mistake": False,
                 "is_blunder": False,
                 "is_miss": False
             }
         
-        # Calculate evaluation drop (how much worse than best move)
-        # Normalize to white's perspective
+        # Calculate both CP drop (for backward compat) and Win% loss
         if is_white_turn:
             eval_drop = best_eval - curr_eval
         else:
             eval_drop = curr_eval - best_eval
         
-        # Ensure positive
         eval_drop = max(0, eval_drop)
         
-        # Classify based on thresholds (Chess.com-style)
-        classification = "best"
-        is_mistake = False
-        is_blunder = False
-        is_miss = False
+        # Calculate Win% loss (the key metric)
+        win_loss = win_chance_loss(best_eval, curr_eval, is_white_turn)
         
-        if eval_drop < MoveClassifier.BEST_THRESHOLD:
-            classification = "best"
-        elif eval_drop < MoveClassifier.EXCELLENT_THRESHOLD:
-            classification = "excellent"
-        elif eval_drop < MoveClassifier.GOOD_THRESHOLD:
-            classification = "good"
-        elif eval_drop < MoveClassifier.INACCURACY_THRESHOLD:
-            classification = "inaccuracy"
-            is_mistake = True
-        elif eval_drop < MoveClassifier.MISTAKE_THRESHOLD:
-            classification = "mistake"
-            is_mistake = True
-            is_miss = True
-        else:
-            classification = "blunder"
-            is_blunder = True
-            is_mistake = True
+        # Classify by Win% loss
+        result = classify_by_win_loss(win_loss)
+        
+        # Add eval_drop for compatibility
+        result["eval_drop"] = eval_drop
         
         # Detect "Great" moves (best move in critical position)
         # Critical = position with high evaluation swing potential (>300cp range)
-        if classification == "best":
+        if result["classification"] == "best":
             position_complexity = abs(best_eval - prev_eval)
             if position_complexity > 300:
-                classification = "great"
+                result["classification"] = "great"
         
         # TODO: Detect "Brilliant" moves (sacrifices that work)
         # Requires checking material balance before/after
         
-        return {
-            "classification": classification,
-            "eval_drop": eval_drop,
-            "is_mistake": is_mistake,
-            "is_blunder": is_blunder,
-            "is_miss": is_miss
-        }
+        return result
     
     @staticmethod
     def calculate_accuracy_from_moves(classifications: list) -> float:
         """
         Calculate overall accuracy from move classifications.
         
-        Uses chess.com-style formula based on evaluation drops.
+        Prefers Win% loss if available, falls back to CP-based calculation.
         """
         if not classifications:
             return 0.0
         
+        # Try Win% based calculation first (more accurate)
+        if classifications[0].get("win_loss") is not None:
+            from src.analysis.win_chance import calculate_accuracy_from_win_losses
+            win_losses = [c.get("win_loss", 0) for c in classifications]
+            return calculate_accuracy_from_win_losses(win_losses)
+        
+        # Fall back to old CP-based calculation
         total_eval_drop = sum(c.get("eval_drop", 0) for c in classifications)
         num_moves = len(classifications)
         
