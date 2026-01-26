@@ -148,19 +148,24 @@ class TestAccuracyCalculation:
     
     def test_perfect_play_is_100_percent(self):
         """Test all best moves = 100% accuracy."""
-        classifications = ['best'] * 20
+        classifications = [{'classification': 'best', 'eval_drop': 0}] * 20
         accuracy = MoveClassifier.calculate_accuracy_from_moves(classifications)
         assert accuracy == 100.0
     
     def test_all_blunders_is_low_accuracy(self):
         """Test all blunders = very low accuracy."""
-        classifications = ['blunder'] * 20
+        classifications = [{'classification': 'blunder', 'eval_drop': 300}] * 20
         accuracy = MoveClassifier.calculate_accuracy_from_moves(classifications)
         assert accuracy < 50.0  # Should be quite low
     
     def test_mixed_moves_reasonable_accuracy(self):
         """Test mix of moves gives reasonable accuracy."""
-        classifications = ['best'] * 10 + ['good'] * 5 + ['mistake'] * 3 + ['blunder'] * 2
+        classifications = (
+            [{'classification': 'best', 'eval_drop': 0}] * 10 +
+            [{'classification': 'good', 'eval_drop': 30}] * 5 +
+            [{'classification': 'mistake', 'eval_drop': 150}] * 3 +
+            [{'classification': 'blunder', 'eval_drop': 300}] * 2
+        )
         accuracy = MoveClassifier.calculate_accuracy_from_moves(classifications)
         assert 50.0 < accuracy < 90.0  # Should be in reasonable range
 
