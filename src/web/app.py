@@ -6,6 +6,19 @@ from src.training.plan_generator import PlanGenerator
 from sqlalchemy import func
 import json
 
+# Background job queue setup
+try:
+    from redis import Redis
+    from rq import Queue
+    redis_conn = Redis()
+    analysis_queue = Queue('analysis', connection=redis_conn)
+    queue_enabled = True
+    print("✅ Background job queue enabled")
+except Exception as e:
+    print(f"⚠️ Job queue disabled: {e}")
+    queue_enabled = False
+    analysis_queue = None
+
 app = Flask(__name__)
 
 
@@ -210,6 +223,83 @@ def analyze_game_route(game_id):
         import traceback
         traceback.print_exc()
         return jsonify({"success": False, "error": str(e)}), 500
+
+
+@app.route("/api/games/<int:game_id>/analyze", methods=["POST"])
+def queue_game_analysis(game_id):
+    """Queue a game for background analysis (non-blocking)."""
+    if not queue_enabled:
+        return jsonify({"error": "Background jobs not available"}), 503
+    
+    session = get_session()
+    game = session.query(Game).get(game_id)
+    
+    if not game:
+        session.close()
+        return jsonify({"error": "Game not found"}), 404
+    
+    try:
+        from src.workers.analyzer_worker import analyze_game_task
+        job = analysis_queue.enqueue(
+            analyze_game_task,
+            game_id,
+            job_timeout='30m',
+            result_ttl=3600  # Keep result for 1 hour
+        )
+        
+        session.close()
+        return jsonify({
+            "success": True,
+            "job_id": job.id,
+            "status": "queued",
+            "message": f"Game {game_id} queued for analysis"
+        })
+    except Exception as e:
+        session.close()
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/jobs/<job_id>", methods=["GET"])
+def get_job_status(job_id):
+    """Check status of a background job."""
+    if not queue_enabled:
+        return jsonify({"error": "Background jobs not available"}), 503
+    
+    try:
+        from rq.job import Job
+        job = Job.fetch(job_id, connection=redis_conn)
+        
+        response = {
+            "job_id": job.id,
+            "status": job.get_status(),
+            "created_at": job.created_at.isoformat() if job.created_at else None,
+        }
+        
+        if job.is_finished:
+            response["result"] = job.result
+        elif job.is_failed:
+            response["error"] = str(job.exc_info)
+        
+        return jsonify(response)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 404
+
+
+@app.route("/api/cache/stats", methods=["GET"])
+def cache_stats():
+    """Get cache statistics."""
+    from src.analysis.cache import get_cache
+    cache = get_cache()
+    return jsonify(cache.get_stats())
+
+
+@app.route("/api/cache/clear", methods=["POST"])
+def clear_cache():
+    """Clear all cached evaluations."""
+    from src.analysis.cache import get_cache
+    cache = get_cache()
+    deleted = cache.clear_all()
+    return jsonify({"deleted": deleted, "message": f"Cleared {deleted} cached evaluations"})
 
 
 @app.route("/api/practice/positions", methods=["GET"])
