@@ -6,14 +6,14 @@ class MoveClassifier:
     """Classifies chess moves based on evaluation changes."""
     
     # Thresholds for move classification (centipawns)
-    # Calibrated to match Chess.com's analysis system
-    BRILLIANT_THRESHOLD = 200  # Sacrificial move that maintains advantage
-    BEST_THRESHOLD = 15       # Near-perfect move (< 15cp loss)
-    EXCELLENT_THRESHOLD = 40   # Very good move (15-40cp loss)
-    GOOD_THRESHOLD = 80        # Decent move (40-80cp loss)
-    INACCURACY_THRESHOLD = 150  # Questionable move (80-150cp loss)
-    MISTAKE_THRESHOLD = 300     # Clear mistake (150-300cp loss)
-    # Blunder is anything above MISTAKE_THRESHOLD (300cp+)
+    # Made MUCH stricter to actually detect mistakes
+    BRILLIANT_THRESHOLD = 300  # Sacrificial move that maintains advantage
+    BEST_THRESHOLD = 10        # Perfect move (<10cp loss)
+    EXCELLENT_THRESHOLD = 25   # Near-perfect (10-25cp loss)
+    GOOD_THRESHOLD = 50        # Solid move (25-50cp loss)
+    INACCURACY_THRESHOLD = 100 # Sub-optimal (50-100cp loss)
+    MISTAKE_THRESHOLD = 200    # Clear error (100-200cp loss)
+    # Blunder is anything above MISTAKE_THRESHOLD (200cp+)
     
     @staticmethod
     def classify_move(
