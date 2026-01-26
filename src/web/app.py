@@ -401,6 +401,42 @@ def practice_mistakes():
     return render_template("practice.html")
 
 
+@app.route("/moves")
+def moves_browser():
+    """Browse all analyzed positions/moves."""
+    session = get_session()
+    
+    # Get filters
+    classification = request.args.get("classification")
+    phase = request.args.get("phase")
+    page = request.args.get("page", 1, type=int)
+    per_page = 50
+    
+    # Base query
+    query = session.query(Position).join(Game).filter(Position.move_classification.isnot(None))
+    
+    # Apply filters
+    if classification:
+        query = query.filter(Position.move_classification == classification)
+    if phase:
+        query = query.filter(Position.game_phase == phase)
+    
+    # Get total count
+    total_positions = query.count()
+    total_games = session.query(Game).filter(Game.analyzed == True).count()
+    
+    # Get paginated results
+    positions = query.order_by(Position.id.desc()).offset((page - 1) * per_page).limit(per_page).all()
+    
+    session.close()
+    
+    return render_template("moves.html", 
+                         positions=positions,
+                         total_positions=total_positions,
+                         total_games=total_games,
+                         page=page)
+
+
 @app.route("/repertoire")
 def repertoire():
     """Opening repertoire builder."""

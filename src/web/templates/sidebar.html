@@ -22,6 +22,10 @@
                 <span class="nav-icon">🎮</span>
                 Games
             </a>
+            <a href="/moves" class="nav-link {% if request.endpoint == 'moves_browser' %}active{% endif %}">
+                <span class="nav-icon">♟️</span>
+                Moves
+            </a>
             <a href="/openings" class="nav-link {% if request.endpoint == 'openings_list' %}active{% endif %}">
                 <span class="nav-icon">📖</span>
                 Openings
