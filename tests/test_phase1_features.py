@@ -154,9 +154,10 @@ class TestAccuracyCalculation:
     
     def test_all_blunders_is_low_accuracy(self):
         """Test all blunders = very low accuracy."""
-        classifications = [{'classification': 'blunder', 'eval_drop': 300}] * 20
+        # Big blunders with Win% losses
+        classifications = [{'classification': 'blunder', 'eval_drop': 300, 'win_loss': 25.0}] * 20
         accuracy = MoveClassifier.calculate_accuracy_from_moves(classifications)
-        assert accuracy < 50.0  # Should be quite low
+        assert accuracy < 10.0  # 25% avg loss * 2 = 50% reduction, so 50% accuracy minimum
     
     def test_mixed_moves_reasonable_accuracy(self):
         """Test mix of moves gives reasonable accuracy."""
