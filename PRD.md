@@ -55,10 +55,56 @@
 - Redis (caching + job queue)
 - SQLite (database - simple, reliable)
 
+**Testing:**
+- pytest (Python unit/integration tests)
+- Test coverage target: >80%
+- All tests must pass before merging
+
 **Infrastructure:**
 - Local dev server (port 5555)
 - Background worker (RQ)
 - Future: Docker deployment
+
+---
+
+## 🧪 Testing Requirements (MANDATORY)
+
+**Test-Driven Development Philosophy:**
+> Every feature, bug fix, and code change MUST have corresponding tests that pass before the code is considered complete.
+
+### Rules
+1. **No Code Without Tests** - Every new function/feature needs test coverage
+2. **Tests Must Pass** - All tests in `tests/` must pass before moving to next task
+3. **Test Before Fix** - For bugs, write failing test first, then fix
+4. **Regression Prevention** - Add test for every bug found
+
+### Test Structure
+```
+tests/
+├── test_chess_improver.py      # Core functionality
+├── test_phase1_features.py     # Phase-specific features  
+├── test_win_chance.py          # Win% algorithm
+├── test_integration.py         # End-to-end tests
+└── test_golden_chesscom.py     # Chess.com validation
+```
+
+### Running Tests
+```bash
+# Run all tests
+pytest tests/ -v
+
+# Run specific test file
+pytest tests/test_win_chance.py -v
+
+# Run with coverage
+pytest tests/ --cov=src --cov-report=html
+```
+
+### Test Coverage Goals
+- **Core algorithms:** 100% (move_classifier, win_chance, engine)
+- **API endpoints:** 90%
+- **UI helpers:** 70%
+- **Overall project:** >80%
 
 ---
 
