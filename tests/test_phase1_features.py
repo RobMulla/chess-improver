@@ -104,14 +104,17 @@ class TestMoveClassificationThresholds:
     
     def test_black_perspective(self):
         """Test classification works from Black's perspective."""
+        # For Black, negative eval = advantage
+        # Going from -100 (slight advantage) to +200 (losing) = 300cp blunder
         result = MoveClassifier.classify_move(
-            prev_eval=-100,  # Negative for black
-            curr_eval=-400,  # Lost 300cp for black
-            best_eval=-100,
+            prev_eval=-100,  # Black was slightly better
+            curr_eval=200,   # Now White is winning (Black blundered!)
+            best_eval=-100,  # Best was to maintain -100
             is_white_turn=False  # Black to move
         )
         assert result['classification'] == 'blunder'
         assert result['is_blunder'] == True
+        # Win% loss should be significant (going from ~59% to ~25% = ~34% loss)
 
 
 class TestGamePhaseDetection:
