@@ -37,3 +37,6 @@ logs/
 # OS
 .DS_Store
 Thumbs.db
+
+# Chess.com analysis HTML (large file, not needed in repo)
+tests/chess_dot_com_analysis_example/
