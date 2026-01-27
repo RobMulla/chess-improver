@@ -16,13 +16,14 @@ class TestGameAnalysisIntegration:
         """Clean up any test games before each test."""
         session = get_session()
         try:
-            # Delete any existing test games to ensure clean state
-            test_games = session.query(Game).filter(
-                Game.game_id.like('TEST_%')
-            ).all()
-            for game in test_games:
-                session.delete(game)
+            # Delete any existing test games using raw SQL for reliability
+            from sqlalchemy import text
+            session.execute(text("DELETE FROM positions WHERE game_id IN (SELECT id FROM games WHERE game_id LIKE 'TEST_%')"))
+            session.execute(text("DELETE FROM games WHERE game_id LIKE 'TEST_%'"))
             session.commit()
+        except Exception as e:
+            # If cleanup fails, rollback and continue - test will handle conflicts
+            session.rollback()
         finally:
             session.close()
     
@@ -30,13 +31,13 @@ class TestGameAnalysisIntegration:
         """Clean up test games after each test."""
         session = get_session()
         try:
-            # Delete test games
-            test_games = session.query(Game).filter(
-                Game.game_id.like('TEST_%')
-            ).all()
-            for game in test_games:
-                session.delete(game)
+            # Delete test games after test completes
+            from sqlalchemy import text
+            session.execute(text("DELETE FROM positions WHERE game_id IN (SELECT id FROM games WHERE game_id LIKE 'TEST_%')"))
+            session.execute(text("DELETE FROM games WHERE game_id LIKE 'TEST_%'"))
             session.commit()
+        except Exception:
+            session.rollback()
         finally:
             session.close()
     
@@ -63,30 +64,31 @@ class TestGameAnalysisIntegration:
         )
         session.add(game)
         session.commit()
+        game_id = game.id  # Save ID before closing session
+        session.close()
         
-        try:
-            with GameAnalyzer() as analyzer:
-                result = analyzer.analyze_game(game, save_to_db=True)
-                
-                # Verify basic structure
-                assert 'total_moves' in result
-                assert 'player_accuracy' in result
-                assert 'move_counts' in result
-                
-                # Should have positions
-                assert result['total_moves'] > 0
-                
-                # White scored checkmate with simple moves, should be high accuracy
-                assert result['player_accuracy'] >= 80.0
-                
-                print(f"\n  ✓ Scholar's Mate: {result['total_moves']} moves, "
-                      f"{result['player_accuracy']:.1f}% accuracy")
-                
-        finally:
-            # Cleanup
-            session.delete(game)
-            session.commit()
-            session.close()
+        # Reload game in analyzer to ensure proper session management
+        session2 = get_session()
+        game = session2.query(Game).filter_by(id=game_id).first()
+        
+        with GameAnalyzer() as analyzer:
+            result = analyzer.analyze_game(game, save_to_db=True)
+            
+            # Verify basic structure
+            assert 'total_moves' in result
+            assert 'player_accuracy' in result
+            assert 'move_counts' in result
+            
+            # Should have positions
+            assert result['total_moves'] > 0
+            
+            # White scored checkmate with simple moves, should be high accuracy
+            assert result['player_accuracy'] >= 80.0
+            
+            print(f"\n  ✓ Scholar's Mate: {result['total_moves']} moves, "
+                  f"{result['player_accuracy']:.1f}% accuracy")
+        
+        session2.close()
     
     def test_analyze_game_with_blunder(self):
         """Test game where Black hangs the queen (obvious blunder)."""
