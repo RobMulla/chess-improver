@@ -53,6 +53,19 @@ class GameAnalyzer:
                 print(f"⚠️ Could not parse PGN for game {game.game_id}")
                 return {}
 
+            # Extract Opening Info if missing
+            if not game.opening_name or not game.opening_eco:
+                game.opening_name = chess_game.headers.get("Opening", "")
+                if not game.opening_name and "ECOUrl" in chess_game.headers:
+                    game.opening_name = (
+                        chess_game.headers.get("ECOUrl", "")
+                        .split("/")[-1]
+                        .replace("-", " ")
+                        .title()
+                    )
+
+                game.opening_eco = chess_game.headers.get("ECO", "")
+
             # Initialize counters
             positions_data = []
             move_counts = {
@@ -72,72 +85,73 @@ class GameAnalyzer:
             middlegame_classifications = []
             endgame_classifications = []
             all_classifications = []
+            opponent_classifications = []
 
-            prev_eval = 0
-            move_number = 0
+            # Setup board and move number
             board = chess_game.board()
+            move_number = 0
+
+            # Initial analysis of starting position
+            initial_analysis = self.analyzer.analyze_position(board)
+            prev_eval = initial_analysis["evaluation"]
+            prev_best_move = initial_analysis["best_move"]
 
             for move in chess_game.mainline_moves():
                 move_number += 1
 
-                # Get current FEN before making the move
+                # Setup context before move
                 current_fen = board.fen()
+                is_white_turn = board.turn
                 phase = MoveClassifier.classify_game_phase(current_fen, move_number)
 
-                # Get evaluation before the move
+                # Make the move to get post-move position
+                board.push(move)
+
+                # Analyze new position (Post-move Eval)
                 analysis = self.analyzer.analyze_position(board)
                 curr_eval = analysis["evaluation"]
-                best_move_uci = analysis["best_move"]
+                curr_best_move = analysis["best_move"]
 
-                # FIX: Evaluate position AFTER best move to get best_eval
-                temp_board = board.copy()
-                try:
-                    temp_board.push(chess.Move.from_uci(best_move_uci))
-                    best_analysis = self.analyzer.analyze_position(temp_board)
-                    best_eval = best_analysis["evaluation"]
-                except (ValueError, chess.IllegalMoveError):
-                    # If best move is invalid, use curr_eval as fallback
-                    best_eval = curr_eval
-
-                # Determine if this is player's move
-                is_white_turn = board.turn
+                # Determine if this was player's move
+                # Note: board.turn is now the opponent's turn (after push)
+                # So we check the turn *before* the push (is_white_turn)
                 is_player_move = (is_white_turn and game.player_color == "white") or (
                     not is_white_turn and game.player_color == "black"
                 )
 
-                # Classify move (only for player moves)
                 move_class = None
-                if is_player_move and move_number > 1:
-                    # TODO: Add book move detection
-                    is_book = False
+                if move_number > 0:
+                    is_book = False  # TODO: Book check
 
-                    # FIX: Pass best_eval instead of curr_eval (was the bug!)
+                    # Classify based on shift from Prev -> Curr
                     move_class = MoveClassifier.classify_move(
-                        prev_eval, curr_eval, best_eval, is_white_turn, is_book
+                        prev_eval, curr_eval, is_white_turn, is_book
                     )
 
-                    # Count by classification
-                    classification = move_class["classification"]
-                    if classification in move_counts:
-                        move_counts[classification] += 1
+                    # Store classification
+                    if is_player_move:
+                        classification = move_class["classification"]
+                        if classification in move_counts:
+                            move_counts[classification] += 1
 
-                    # Track by phase
-                    if phase == "opening":
-                        opening_classifications.append(move_class)
-                    elif phase == "middlegame":
-                        middlegame_classifications.append(move_class)
+                        if phase == "opening":
+                            opening_classifications.append(move_class)
+                        elif phase == "middlegame":
+                            middlegame_classifications.append(move_class)
+                        else:
+                            endgame_classifications.append(move_class)
+
+                        all_classifications.append(move_class)
                     else:
-                        endgame_classifications.append(move_class)
+                        opponent_classifications.append(move_class)
 
-                    all_classifications.append(move_class)
-
-                # Store position data
+                # Store position data for THIS move
                 position_data = {
                     "game_id": game.id,
                     "move_number": move_number,
-                    "fen": board.fen(),
-                    "evaluation": curr_eval,
-                    "best_move": best_move_uci,
+                    "fen": current_fen,  # FEN *before* move (standard convention)
+                    "evaluation": prev_eval,  # Eval *before* move (Context for the move)
+                    "best_move": prev_best_move,  # Best move available *before*
                     "player_move": move.uci(),
                     "is_mistake": move_class["is_mistake"] if move_class else False,
                     "is_blunder": move_class["is_blunder"] if move_class else False,
@@ -147,13 +161,15 @@ class GameAnalyzer:
                 }
                 positions_data.append(position_data)
 
-                # Make the move
-                board.push(move)
-                # Update prev_eval - use best_eval as baseline for next move
-                prev_eval = best_eval  # Flip for next side
+                # Update state for next iteration
+                prev_eval = curr_eval
+                prev_best_move = curr_best_move
 
             # Calculate accuracies
             overall_accuracy = MoveClassifier.calculate_accuracy_from_moves(all_classifications)
+            opponent_accuracy = MoveClassifier.calculate_accuracy_from_moves(
+                opponent_classifications
+            )
             opening_accuracy = MoveClassifier.calculate_accuracy_from_moves(opening_classifications)
             middlegame_accuracy = MoveClassifier.calculate_accuracy_from_moves(
                 middlegame_classifications
@@ -165,6 +181,7 @@ class GameAnalyzer:
                 "game_id": game.id,
                 "total_moves": move_number,
                 "player_accuracy": overall_accuracy,
+                "opponent_accuracy": opponent_accuracy,
                 "opening_accuracy": opening_accuracy,
                 "middlegame_accuracy": middlegame_accuracy,
                 "endgame_accuracy": endgame_accuracy,
@@ -205,6 +222,7 @@ class GameAnalyzer:
             game.analysis_date = datetime.utcnow()
             game.total_moves = summary["total_moves"]
             game.player_accuracy = summary["player_accuracy"]
+            game.opponent_accuracy = summary["opponent_accuracy"]
             game.opening_accuracy = summary["opening_accuracy"]
             game.middlegame_accuracy = summary["middlegame_accuracy"]
             game.endgame_accuracy = summary["endgame_accuracy"]

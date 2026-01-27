@@ -1,0 +1,205 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <div class="flex justify-between items-center mb-6">
+        <h1 class="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-600">
+            Settings
+        </h1>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- Account Settings -->
+        <div class="bg-gray-800 rounded-xl shadow-lg border border-gray-700 p-6">
+            <h2 class="text-xl font-semibold mb-4 text-purple-300">
+                <i class="fas fa-user-circle mr-2"></i>Accounts
+            </h2>
+            <form action="{{ url_for('settings') }}" method="POST">
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-gray-400 mb-2 font-medium">Chess.com Username</label>
+                        <input type="text" name="chess_com_username" value="{{ config.get('chess_com_username', '') }}"
+                            class="w-full bg-gray-900 border border-gray-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-purple-500 placeholder-gray-600"
+                            placeholder="e.g. Hikaru">
+                    </div>
+
+                    <div>
+                        <label class="block text-gray-400 mb-2 font-medium">Lichess Username</label>
+                        <input type="text" name="lichess_username" value="{{ config.get('lichess_username', '') }}"
+                            class="w-full bg-gray-900 border border-gray-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-purple-500 placeholder-gray-600"
+                            placeholder="e.g. MagnusCarlsen">
+                    </div>
+                </div>
+
+                <div class="mt-6 pt-6 border-t border-gray-700">
+                    <button type="submit"
+                        class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-lg transition duration-200 transform hover:scale-[1.02]">
+                        Save Settings
+                    </button>
+                </div>
+            </form>
+
+            <!-- Sync Actions -->
+            <div class="mt-6 pt-6 border-t border-gray-700">
+                <h3 class="text-sm uppercase tracking-wide text-gray-500 font-semibold mb-3">Actions</h3>
+                <button type="button" onclick="syncGames()" id="syncBtn"
+                    class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition duration-200 flex justify-center items-center shadow-md">
+                    <i class="fas fa-sync-alt mr-2" id="syncIcon"></i>
+                    <span>Sync All Games</span>
+                </button>
+                <p class="text-xs text-gray-500 mt-2 text-center">Imports new games from connected accounts background.
+                </p>
+
+                <!-- Progress Bar -->
+                <div id="syncProgress" class="hidden mt-4">
+                    <div class="flex justify-between text-xs text-gray-400 mb-1">
+                        <span id="syncStatusText">Starting sync...</span>
+                        <span id="syncPercent">0%</span>
+                    </div>
+                    <div class="w-full bg-gray-700 rounded-full h-2.5">
+                        <div id="syncBar" class="bg-blue-600 h-2.5 rounded-full transition-all duration-500"
+                            style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            async function syncGames() {
+                const btn = document.getElementById('syncBtn');
+                const icon = document.getElementById('syncIcon');
+                const span = btn.querySelector('span');
+                const progressDiv = document.getElementById('syncProgress');
+                const progressBar = document.getElementById('syncBar');
+                const statusText = document.getElementById('syncStatusText');
+                const percentText = document.getElementById('syncPercent');
+
+                const originalText = span.innerText;
+
+                // UI Loading state
+                btn.disabled = true;
+                btn.classList.add('opacity-75', 'cursor-wait');
+                icon.classList.add('fa-spin');
+                span.innerText = 'Queuing...';
+
+                try {
+                    const response = await fetch('/api/sync-games', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({})
+                    });
+
+                    const data = await response.json();
+
+                    if (data.success && data.jobs && data.jobs.length > 0) {
+                        // Show progress bar
+                        progressDiv.classList.remove('hidden');
+
+                        // Poll all jobs (simplified: poll the first one for now or tracking aggregate?)
+                        // If multiple jobs (chess.com + lichess), tracking is complex.
+                        // Let's track the first job found.
+                        const jobId = data.jobs[0].job_id;
+                        pollJob(jobId);
+
+                    } else if (data.success) {
+                        alert('No accounts configured or no games to sync.');
+                        resetUI();
+                    } else {
+                        alert(`Sync failed: ${data.error || 'Unknown error'}`);
+                        resetUI();
+                    }
+                } catch (e) {
+                    alert('Error connecting to server');
+                    console.error(e);
+                    resetUI();
+                }
+
+                function resetUI() {
+                    btn.disabled = false;
+                    btn.classList.remove('opacity-75', 'cursor-wait');
+                    icon.classList.remove('fa-spin');
+                    span.innerText = originalText;
+                    // Don't hide progress immediately if it was success/fail, user wants to see result?
+                    // Actually reset should hide it if called on error.
+                }
+
+                async function pollJob(jobId) {
+                    const pollInterval = setInterval(async () => {
+                        try {
+                            const res = await fetch(`/api/jobs/${jobId}`);
+                            const job = await res.json();
+
+                            if (job.status === 'finished' || job.status === 'failed') {
+                                clearInterval(pollInterval);
+                                finalize(job);
+                            } else {
+                                // Update progress
+                                const progress = (job.meta && job.meta.progress) ? job.meta.progress : 0;
+                                progressBar.style.width = `${progress}%`;
+                                percentText.innerText = `${progress}%`;
+                                statusText.innerText = `Syncing... ${job.status}`;
+                            }
+                        } catch (e) {
+                            console.error("Polling error", e);
+                        }
+                    }, 1000);
+                }
+
+                function finalize(job) {
+                    progressBar.style.width = '100%';
+                    percentText.innerText = '100%';
+
+                    if (job.status === 'finished') {
+                        statusText.innerText = 'Sync Complete!';
+                        progressBar.classList.remove('bg-blue-600');
+                        progressBar.classList.add('bg-green-500');
+
+                        // Success Toast
+                        const toast = document.createElement('div');
+                        toast.className = "fixed bottom-4 right-4 bg-green-600 text-white px-6 py-3 rounded-lg shadow-xl animate-bounce-in z-50";
+                        toast.innerHTML = `<i class="fas fa-check-circle mr-2"></i> Imported ${job.meta ? job.meta.imported_count : '?'} games!`;
+                        document.body.appendChild(toast);
+                        setTimeout(() => toast.remove(), 4000);
+
+                    } else {
+                        statusText.innerText = 'Sync Failed';
+                        progressBar.classList.remove('bg-blue-600');
+                        progressBar.classList.add('bg-red-500');
+                        alert(`Sync job failed: ${job.error}`);
+                    }
+
+                    setTimeout(resetUI, 2000);
+                }
+            }
+        </script>
+
+        <!-- Preferences (Placeholder for now) -->
+        <div class="bg-gray-800 rounded-xl shadow-lg border border-gray-700 p-6 opacity-75">
+            <h2 class="text-xl font-semibold mb-4 text-gray-400">
+                <i class="fas fa-sliders-h mr-2"></i>Analysis Preferences
+            </h2>
+            <p class="text-gray-500 text-sm mb-4">Advanced engine settings coming soon.</p>
+
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-gray-500 mb-2">Engine Threads</label>
+                    <select disabled
+                        class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 text-gray-500 cursor-not-allowed">
+                        <option>Auto</option>
+                        <option>1</option>
+                        <option>2</option>
+                        <option>4</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification (if success) -->
+    {% if success %}
+    <div class="fixed bottom-4 right-4 bg-green-600 text-white px-6 py-3 rounded-lg shadow-xl animate-bounce-in">
+        <i class="fas fa-check-circle mr-2"></i> Settings saved successfully!
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

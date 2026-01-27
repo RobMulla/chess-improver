@@ -18,7 +18,6 @@ class MoveClassifier:
     def classify_move(
         prev_eval: float,
         curr_eval: float,
-        best_eval: float,
         is_white_turn: bool,
         is_book_move: bool = False,
     ) -> dict:
@@ -31,7 +30,6 @@ class MoveClassifier:
         Args:
             prev_eval: Evaluation before move (in centipawns)
             curr_eval: Evaluation after  move (in centipawns)
-            best_eval: Best possible evaluation (from engine)
             is_white_turn: Whether it's white's turn
             is_book_move: Whether move is from opening book
 
@@ -52,14 +50,14 @@ class MoveClassifier:
 
         # Calculate both CP drop (for backward compat) and Win% loss
         if is_white_turn:
-            eval_drop = best_eval - curr_eval
+            eval_drop = prev_eval - curr_eval
         else:
-            eval_drop = curr_eval - best_eval
+            eval_drop = curr_eval - prev_eval
 
         eval_drop = max(0, eval_drop)
 
         # Calculate Win% loss (the key metric)
-        win_loss = win_chance_loss(best_eval, curr_eval, is_white_turn)
+        win_loss = win_chance_loss(prev_eval, curr_eval, is_white_turn)
 
         # Classify by Win% loss
         result = classify_by_win_loss(win_loss)
@@ -117,52 +115,40 @@ class MoveClassifier:
         """
         Determine game phase from position (FEN) and move number.
 
-        More accurate than move number alone:
-        - Opening: Early moves with most pieces on board
-        - Middlegame: Active pieces, queens still on board
-        - Endgame: Queens traded or few pieces remaining
-
-        Args:
-            fen: Position in FEN notation
-            move_number: Move number in the game
-
-        Returns:
-            "opening", "middlegame", or "endgame"
+        Uses material count and move number:
+        - Opening: First 15 moves (if material high)
+        - Endgame: Low material or no queens per side
+        - Middlegame: Everything else
         """
-        # Parse FEN to get piece placement
         board_section = fen.split(" ")[0]
-
-        # Count pieces (excluding kings and pawns)
         pieces = board_section.replace("/", "")
 
-        # Count major and minor pieces for each side
+        # Material weights
+        weights = {"q": 9, "r": 5, "b": 3, "n": 3, "p": 1}
+
+        white_material = sum(weights.get(p.lower(), 0) for p in pieces if p.isupper())
+        black_material = sum(weights.get(p.lower(), 0) for p in pieces if p.islower())
+        total_material = white_material + black_material
+
+        # Queens count
         white_queens = pieces.count("Q")
         black_queens = pieces.count("q")
-        white_rooks = pieces.count("R")
-        black_rooks = pieces.count("r")
-        white_bishops = pieces.count("B")
-        black_bishops = pieces.count("b")
-        white_knights = pieces.count("N")
-        black_knights = pieces.count("n")
 
-        # Total major pieces (queens + rooks)
-        total_major = white_queens + black_queens + white_rooks + black_rooks
+        # Endgame Detection
+        # 1. No queens on board (Queenless middlegame/endgame)
+        # 2. Very low material (e.g. < 20 points total excluding kings)
+        no_queens = white_queens == 0 and black_queens == 0
+        low_material = total_material < 30  # Approx 2 Rooks + 2 Minors + Pawns
 
-        # Total minor pieces (bishops + knights)
-        total_minor = white_bishops + black_bishops + white_knights + black_knights
-
-        # Total non-pawn, non-king pieces
-        total_pieces = total_major + total_minor
-
-        # Game phase classification
-        # Endgame: No queens OR very few pieces left
-        if (white_queens == 0 and black_queens == 0) or total_pieces <= 6:
+        # Strict endgame: No queens OR material < 24
+        if no_queens or total_material < 24:
             return "endgame"
 
-        # Opening: Early moves with most pieces still on board
-        # (14+ pieces remaining, typically first 10-15 moves)
-        if move_number <= 12 and total_pieces >= 14:
+        # Opening Detection
+        # Strict: Start of game
+        if move_number <= 10:
+            return "opening"
+        if move_number <= 15 and total_material > 60:  # High material mostly on board
             return "opening"
 
-        # Middlegame: Everything else
         return "middlegame"

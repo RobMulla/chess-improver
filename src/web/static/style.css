@@ -414,3 +414,440 @@ tr:hover {
         grid-template-columns: 1fr;
     }
 }
+
+/* Clean Header Layout */
+.header-flex {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.header-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+/* Game Viewer Components */
+.board-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.board-badges {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.board-controls {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: center;
+    margin-top: 1.5rem;
+}
+
+.analysis-status {
+    text-align: center;
+    margin-top: 1.5rem;
+    padding: 1rem;
+    background: var(--bg-tertiary);
+    border-radius: 8px;
+}
+
+.game-sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.compact-card {
+    margin-bottom: 1rem;
+    padding: var(--spacing-lg);
+}
+
+.info-grid {
+    display: grid;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+}
+
+.info-row {
+    display: flex;
+    justify-content: space-between;
+}
+
+.text-accent {
+    color: var(--accent-primary);
+}
+
+.progress-bar {
+    height: 6px;
+    background: var(--bg-tertiary);
+    border-radius: 3px;
+    overflow: hidden;
+    margin-top: 0.25rem;
+}
+
+.progress-fill {
+    height: 100%;
+    background: var(--accent-primary);
+}
+
+.board-wrapper {
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+/* Helpers */
+.text-success {
+    color: var(--success);
+}
+
+.text-error {
+    color: var(--error);
+}
+
+.text-warning {
+    color: var(--warning);
+}
+
+.text-muted {
+    color: var(--text-muted);
+}
+
+/* Form Controls */
+.form-select,
+.form-input {
+    width: 100%;
+    padding: 0.5rem;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-subtle);
+    border-radius: 6px;
+    color: var(--text-primary);
+    font-family: var(--font-primary);
+    font-size: 0.875rem;
+}
+
+.form-select:focus,
+.form-input:focus {
+    outline: none;
+    border-color: var(--accent-primary);
+}
+
+/* Pagination */
+.pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 1rem;
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border-subtle);
+}
+
+/* Game Viewer Styles */
+.game-layout {
+    display: grid;
+    grid-template-columns: 1fr 400px;
+    gap: 1.5rem;
+}
+
+.move-list-container {
+    max-height: 400px;
+    overflow-y: auto;
+    font-family: monospace;
+    line-height: 2;
+}
+
+.move-item {
+    cursor: pointer;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    background: var(--bg-tertiary);
+    transition: all 0.1s ease;
+}
+
+.move-item:hover {
+    background: var(--bg-hover);
+}
+
+.move-item.active {
+    background: var(--accent-primary);
+    color: white;
+}
+
+.evaluation-bar-container {
+    height: 6px;
+    background: var(--bg-tertiary);
+    border-radius: 3px;
+    overflow: hidden;
+    margin-top: 0.25rem;
+}
+
+.evaluation-bar {
+    height: 100%;
+}
+
+.move-quality-grid {
+    display: grid;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+}
+
+.move-quality-item {
+    display: flex;
+    justify-content: space-between;
+}
+
+/* Table Filters */
+.table-filters th {
+    padding: 0.5rem;
+    background: var(--bg-secondary);
+    border-bottom: 2px solid var(--border-subtle);
+}
+
+.btn-sm {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+}
+
+.external-link {
+    color: var(--text-muted);
+    text-decoration: none;
+    font-size: 1.1rem;
+    transition: color 0.2s;
+}
+
+.external-link:hover {
+    color: var(--accent-primary);
+}
+/* Clean Header Layout */
+.header-flex {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.header-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+/* Game Viewer Components */
+.board-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.board-badges {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.board-controls {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: center;
+    margin-top: 1.5rem;
+}
+
+.analysis-status {
+    text-align: center;
+    margin-top: 1.5rem;
+    padding: 1rem;
+    background: var(--bg-tertiary);
+    border-radius: 8px;
+}
+
+.game-sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.compact-card {
+    margin-bottom: 1rem;
+    padding: var(--spacing-lg);
+}
+
+.info-grid {
+    display: grid;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+}
+
+.info-row {
+    display: flex;
+    justify-content: space-between;
+}
+
+.text-accent {
+    color: var(--accent-primary);
+}
+
+.progress-bar {
+    height: 6px;
+    background: var(--bg-tertiary);
+    border-radius: 3px;
+    overflow: hidden;
+    margin-top: 0.25rem;
+}
+
+.progress-fill {
+    height: 100%;
+    background: var(--accent-primary);
+}
+
+.board-wrapper {
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+/* --- Refactored Games List (Dense/Chess.com Style) --- */
+
+.table-container {
+    /* Remove the card-like shadow/padding for the table container to make it flatter */
+    box-shadow: none;
+    border: 1px solid var(--border-color);
+    border-radius: 8px; /* Slightly reduced radius */
+    padding: 0;
+    background: var(--bg-secondary);
+}
+
+/* Table Overrides */
+.games-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.games-table th {
+    background: var(--bg-tertiary);
+    color: var(--text-secondary);
+    font-weight: 600;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.games-table td {
+    padding: 0.75rem 1rem; /* Reduced padding from standard */
+    border-bottom: 1px solid var(--border-color);
+    vertical-align: middle;
+    font-size: 0.9rem;
+}
+
+.games-table tr:last-child td {
+    border-bottom: none;
+}
+
+.games-table tr:hover {
+    background-color: var(--bg-tertiary); /* Subtle hover */
+}
+
+/* Player Cell Styling */
+.player-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.player-info {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.player-name {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.player-rating {
+    color: var(--text-muted);
+    font-weight: 400;
+    font-size: 0.85em;
+}
+
+.result-marker {
+    font-weight: 700;
+    font-size: 0.8em;
+    padding: 2px 4px;
+    border-radius: 4px;
+    margin-left: auto; /* Push to right of name if needed, or keeping tight */
+}
+
+.marker-win { color: var(--success); background: rgba(33, 197, 94, 0.1); }
+.marker-loss { color: var(--error); background: rgba(239, 68, 68, 0.1); }
+.marker-draw { color: var(--warning); background: rgba(234, 179, 8, 0.1); }
+
+/* Subtext/Meta */
+.game-opening {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-top: 0.25rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 200px;
+}
+
+/* Accuracy Capsule */
+.accuracy-capsule {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-weight: 600;
+    font-size: 0.85rem;
+    background: var(--bg-tertiary);
+}
+
+/* Date Cell */
+.date-cell {
+    text-align: right;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    white-space: nowrap;
+}
+
+/* Result Column (Icon + Text) */
+.result-cell-content {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 600;
+}
+
+/* --- Loading Spinner --- */
+.spinner {
+    display: inline-block;
+    width: 1em;
+    height: 1em;
+    border: 2px solid currentColor;
+    border-right-color: transparent;
+    border-radius: 50%;
+    animation: spin 0.75s linear infinite;
+    vertical-align: text-bottom;
+    margin-right: 0.5rem;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Games List Refinements */
+.games-table .link-cell {
+    width: 40px;
+    text-align: center;
+    padding: 0;
+}
+
+.games-table .players-cell {
+    max-width: 300px; /* Limit width */
+    overflow: hidden;
+}

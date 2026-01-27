@@ -183,6 +183,7 @@
         let game = null;
         let score = { correct: 0, total: 0 };
         let currentAttempt = null;
+        let sessionId = null;
 
         async function startPractice() {
             const startBtn = document.getElementById('start-btn');
@@ -206,6 +207,7 @@
 
             if (data.positions && data.positions.length > 0) {
                 practicePositions = data.positions;
+                sessionId = data.session_id;
                 currentIndex = 0;
                 score = { correct: 0, total: 0 };
 
@@ -279,6 +281,7 @@
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
+                    session_id: sessionId,
                     position_id: pos.id,
                     user_move: currentAttempt
                 })
@@ -305,8 +308,20 @@
             feedbackPanel.style.display = 'block';
         }
 
-        function showAnswer() {
+        async function showAnswer() {
             const pos = practicePositions[currentIndex];
+
+            // Record attempt as given up
+            await fetch('/api/practice/check', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    session_id: sessionId,
+                    position_id: pos.id,
+                    gave_up: true
+                })
+            });
+
             score.total++;
 
             const feedbackPanel = document.getElementById('feedback-panel');

@@ -1,71 +1,109 @@
-# Chess Improver
+# Chess Improver 🚀
 
-A comprehensive chess improvement system that downloads your games from chess.com and Lichess, analyzes them with Stockfish, uses AI for deep insights, and creates personalized daily training plans.
+**AI-powered chess training platform** that analyzes your games, identifies mistakes, and helps you improve through targeted practice.
 
-## Features
+[![Tests](https://img.shields.io/badge/tests-70%20passing-success)]() [![Coverage](https://img.shields.io/badge/coverage-40%25-yellow)]() [![Python](https://img.shields.io/badge/python-3.14-blue)]()
 
-Automatic game download from chess.com and Lichess. Engine analysis using Stockfish to identify mistakes and calculate accuracy. AI-powered insights for deep game reviews and pattern recognition. Custom insights dashboard that recreates chess.com insights with more flexibility. Daily training plans personalized to your weaknesses. Opening repertoire analysis to track performance. Learning resources including curated YouTube videos and study materials. Progress tracking with task completion and data export.
+## 🎯 Features
 
-## Quick Start
+- **Automatic Game Import** from Chess.com and Lichess
+- **Stockfish Analysis** with Win% algorithm (Lichess method)
+- **Smart Move Classification** (Best → Blunder based on Win% loss)
+- **Interactive Practice Mode** for your actual mistakes
+- **Performance Insights** and trends
+- **Background Analysis** with Redis job queue
 
-### Prerequisites
-
-Python 3.9 or higher installed. Stockfish Chess Engine downloaded from stockfishchess.org. Active account on chess.com and/or Lichess.
-
-### Installation
-
-Clone the repository and navigate to the project directory. Create a virtual environment using uv or venv. Activate the virtual environment. Install dependencies from requirements.txt. Copy .env.example to .env and configure with your credentials.
-
-```bash
-# Create virtual environment
-uv venv
-source venv/bin/activate
-
-# Install dependencies
-uv pip install -r requirements.txt
-
-# Configure environment
-cp .env.example .env
-```
-
-### Configuration
-
-Edit the .env file with your information:
+## 🚀 Quick Start
 
 ```bash
-CHESS_COM_USERNAME=your_username
-LICHESS_USERNAME=your_username
-STOCKFISH_PATH=/path/to/stockfish
-OPENAI_API_KEY=sk-...
+# 1. Clone and setup
+git clone <repo-url>
+cd chess-improver
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+
+# 2. Install dependencies
+pip install -r requirements.txt
+
+# 3. Install Stockfish
+brew install stockfish  # Mac
+# or download from https://stockfishchess.org/
+
+# 4. Start Redis (for background jobs)
+redis-server &
+
+# 5. Run the web app
+python -m src.web.app
+
+# 6. Open browser
+open http://localhost:5555
 ```
 
-### Usage
+## 📚 Documentation
 
-Download your games using the sync command. Analyze games with Stockfish. Generate today's training plan. Start the web interface and visit localhost:5000.
+- **[PRD.md](PRD.md)** - Product requirements and architecture
+- **[docs/WEB_UI_PLAN.md](docs/WEB_UI_PLAN.md)** - Web UI implementation roadmap
+- **[docs/CLEANUP_AUDIT.md](docs/CLEANUP_AUDIT.md)** - Code coverage analysis
+
+## 🧪 Testing
 
 ```bash
-python cli/sync_games.py
-python cli/analyze_games.py
-python cli/generate_plan.py
-python src/web/app.py
+# Run all tests
+pytest tests/ -v
+
+# Run with coverage
+pytest tests/ --cov=src --cov-report=html
+
+# View coverage report
+open htmlcov/index.html
 ```
 
-## Project Structure
+## 📊 Current Status
 
-The source code is organized into collectors for downloading games, database models for storage, analysis modules for Stockfish integration, AI modules for insights, training modules for plan generation, resources for learning materials, and web interface for the dashboard. Command-line tools are in the cli directory. Downloaded games and the database are stored in the data directory.
+**Backend:** ✅ Complete
+- Game import, analysis, caching, background jobs
 
-## How It Works
+**Web UI:** ⚠️ 70% Complete
+- Dashboard, games list, game viewer, practice mode
+- Missing: Import UI, bulk analysis, opening detection
 
-The system downloads all your games via public APIs. Stockfish analyzes each position to find mistakes and calculate accuracy. AI identifies recurring patterns and weaknesses across games. Custom insights are generated showing accuracy trends and opening statistics. Daily tasks are generated based on your specific needs. Progress tracking shows completion rates and improvement over time.
+**Test Coverage:** 40%
+- Core algorithms: 96-98%
+- Need: Web app tests, worker tests
 
-## Privacy
+## 🛠️ Tech Stack
 
-All data is stored locally on your machine. The only external API calls are to chess.com and Lichess to download your public games, OpenAI if using AI analysis (optional), and YouTube if searching for videos (optional).
+- **Backend:** Python, Flask, Stockfish, Redis, SQLite
+- **Frontend:** HTML/CSS/JavaScript (vanilla)
+- **Testing:** pytest, pre-commit hooks (Ruff)
+- **Deployment:** Local dev (Docker coming soon)
 
-## License
+## 🎓 How It Works
 
-Apache 2.0 - See LICENSE file
+1. **Import** your games from Chess.com/Lichess
+2. **Analyze** with Stockfish (background jobs)
+3. **Classify** moves using Win% algorithm
+4. **Practice** your mistakes interactively
+5. **Improve** based on data-driven insights!
 
-## Roadmap
+## 📈 Roadmap
 
-Integration with chess.com Game Review API. Local LLM support using Ollama. Mobile app for daily plans. Spaced repetition for opening training. Tournament preparation mode. Opening tree visualization.
+See [docs/WEB_UI_PLAN.md](docs/WEB_UI_PLAN.md) for detailed roadmap.
+
+**Phase 1 (Week 1):** Browser-only workflow (import, analyze, export via UI)
+**Phase 2 (Week 2):** Opening detection + insights visualization
+**Phase 3 (Week 3):** Practice enhancements + gamification
+
+## 🤝 Contributing
+
+1. Tests must pass: `pytest tests/`
+2. Coverage must not drop below 40%
+3. Pre-commit hooks will auto-format code (Ruff)
+
+## 📝 License
+
+MIT
+
+---
+
+**Built with ❤️ for chess improvement**

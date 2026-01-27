@@ -10,7 +10,7 @@ Successfully completed end-to-end pipeline execution on 2026-01-25 with real use
 - Archives found: 124 (spanning 2015-2026)
 - Games downloaded: 50
 
-### Lichess (robikscube)  
+### Lichess (robikscube)
 - Games downloaded: 50
 
 ### Total
@@ -101,7 +101,7 @@ Plan for 2026-01-25 with 5 personalized tasks:
 - Game download: ~2 minutes for 100 games
 - Stockfish analysis: ~30 minutes for 10 games (depth 20)
 - Opening analysis: <1 second
-- Insights generation: <1 second  
+- Insights generation: <1 second
 - Daily plan generation: <1 second
 
 ## Next Steps

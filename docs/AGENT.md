@@ -5,7 +5,7 @@ A comprehensive chess improvement system that imports games from Chess.com and L
 
 **Tech Stack:**
 - Backend: Python 3.14, Flask, SQLAlchemy
-- Chess Engine: Stockfish 
+- Chess Engine: Stockfish
 - Database: SQLite
 - Frontend: HTML, CSS, JavaScript, Chessboard.js
 - Testing: pytest
@@ -70,7 +70,7 @@ chess-improver/
   - `opening_accuracy`, `middlegame_accuracy`, `endgame_accuracy`
   - Move counts: `brilliant_moves`, `great_moves`, `best_moves`, `excellent_moves`, `good_moves`, `inaccuracy_moves`, `mistake_moves`, `blunder_moves`
 
-### Positions Table  
+### Positions Table
 **Purpose:** Stores every move/position from analyzed games
 
 **Key Fields:**
@@ -118,7 +118,7 @@ chess-improver/
   - **Middlegame:** Everything else
 - Saves all position data to database
 
-**Critical Fix Applied:** 
+**Critical Fix Applied:**
 - Added `session.add(game)` before commit (was causing save failures)
 - Added `session.merge(game)` to handle detached instances
 
@@ -137,7 +137,7 @@ with GameAnalyzer() as analyzer:
 
 **Classification Thresholds:**
 - Best: < 10cp loss
-- Excellent: < 25cp  
+- Excellent: < 25cp
 - Good: < 50cp
 - Inaccuracy: < 100cp
 - Mistake: < 200cp
@@ -170,7 +170,7 @@ accuracy = 103.1668 * e^(-0.04354 * avg_eval_drop) - 3.1669
 - Full move list with classifications
 - Star button to favorite
 
-#### Moves Browser (`/moves`) ⚠️ 
+#### Moves Browser (`/moves`) ⚠️
 - **NEW:** View all 207 analyzed positions
 - Filter by classification and game phase
 - Shows: player move vs best move, eval drop

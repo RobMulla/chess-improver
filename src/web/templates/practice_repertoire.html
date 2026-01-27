@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Practice Repertoire - {{ repertoire.name }}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.css">
+</head>
+<body>
+    <div class="layout-container">
+        {% include 'sidebar.html' %}
+
+        <main class="main-content">
+            <header class="page-header">
+                <div>
+                    <h1>Practice: {{ repertoire.name }}</h1>
+                    <p class="text-muted">Color: {{ repertoire.color }}</p>
+                </div>
+                <a href="/repertoire" class="btn btn-secondary">Back to Repertoire</a>
+            </header>
+
+            <div class="practice-container">
+                <div class="board-container">
+                    <div id="board" style="width: 600px"></div>
+                </div>
+
+                <div class="practice-info">
+                    <div class="card">
+                        <h3>Status</h3>
+                        <p id="status-message">Your Turn</p>
+                    </div>
+                    <div class="card">
+                        <h3>Notes</h3>
+                        <p>{{ repertoire.notes }}</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
+    <script>
+        // Basic placeholder script - full implementation in future task
+        var board = Chessboard('board', {
+            position: 'start',
+            draggable: true
+        });
+    </script>
+</body>
+</html>
