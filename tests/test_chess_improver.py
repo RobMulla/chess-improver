@@ -47,11 +47,11 @@ class TestMoveClassifier:
         assert result['is_mistake'] == False
     
     def test_classify_move_blunder(self):
-        """Test blunder classification."""
+        """Test blunder classification (15%+ Win% loss)."""
         result = MoveClassifier.classify_move(
-            prev_eval=0,
-            curr_eval=-100,
-            best_eval=0,  # Best was to stay even
+            prev_eval=100,
+            curr_eval=-200,  # Drop from +100 to -200 = ~30% Win% loss
+            best_eval=100,
             is_white_turn=True
         )
         assert result['classification'] == 'blunder'
