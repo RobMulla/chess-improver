@@ -33,3 +33,14 @@ repos:
       - id: bandit
         args: ['-c', 'pyproject.toml']
         additional_dependencies: ['bandit[toml]']
+
+  # Test coverage enforcement
+  - repo: local
+    hooks:
+      - id: pytest-coverage
+        name: pytest with coverage check
+        entry: bash -c 'cd /Users/robmulla/Repos/chess-improver && source venv/bin/activate && pytest tests/ --cov=src --cov-fail-under=40 -q --tb=no'
+        language: system
+        pass_filenames: false
+        always_run: false
+        stages: [push]  # Only run on push, not every commit
