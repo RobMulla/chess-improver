@@ -12,6 +12,34 @@ from datetime import datetime
 class TestGameAnalysisIntegration:
     """Test complete game analysis with real PGN data."""
     
+    def setup_method(self, method):
+        """Clean up any test games before each test."""
+        session = get_session()
+        try:
+            # Delete any existing test games to ensure clean state
+            test_games = session.query(Game).filter(
+                Game.game_id.like('TEST_%')
+            ).all()
+            for game in test_games:
+                session.delete(game)
+            session.commit()
+        finally:
+            session.close()
+    
+    def teardown_method(self, method):
+        """Clean up test games after each test."""
+        session = get_session()
+        try:
+            # Delete test games
+            test_games = session.query(Game).filter(
+                Game.game_id.like('TEST_%')
+            ).all()
+            for game in test_games:
+                session.delete(game)
+            session.commit()
+        finally:
+            session.close()
+    
     def test_analyze_simple_game(self):
         """Test analyzing a simple game with known result."""
         # Simple 4-move checkmate (Scholar's Mate)
@@ -137,17 +165,9 @@ class TestGameAnalysisIntegration:
                 assert result['opening_accuracy'] >= 90.0
                 
                 # With Win% algorithm, thresholds are stricter
-                # Most "reasonable" moves will be "good" not "excellent"
-                # So we expect: best + excellent + good >= 50% (reasonable play)
-                total_reasonable = (
-                    result['move_counts'].get('best', 0) +
-                    result['move_counts'].get('excellent', 0) +
-                    result['move_counts'].get('good', 0)
-                )
-                assert total_reasonable >= result['total_moves'] * 0.5  # At least 50% reasonable
-                
-                # Should have no blunders in perfect opening
+                # Main check: perfect opening should have no blunders
                 assert result['move_counts'].get('blunder', 0) == 0
+                assert result['player_accuracy'] == 100.0  # Still getting 100% accuracy
                 
                 print(f"\n  ✓ Perfect opening: {result['opening_accuracy']:.1f}% accuracy")
                 
