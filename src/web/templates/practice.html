@@ -426,6 +426,11 @@
                 board.orientation(orientation);
             }
 
+            // Always ensure board orientation is correct, sometimes the init doesn't stick
+            if (board.orientation() !== orientation) {
+                board.orientation(orientation);
+            }
+
             // Show start position if history exists, then animate the last move
             if (historyFens.length > 1) {
                 board.position(historyFens[historyFens.length - 2], false);
@@ -435,6 +440,7 @@
                 }, 800);
             } else {
                 board.position(pos.fen, false);
+                currentHistoryIndex = 0;
             }
         }
 
