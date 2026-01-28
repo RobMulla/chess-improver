@@ -4,16 +4,7 @@
 
 Chess Improver aggregates game history from external platforms, processes it through professional-grade analysis engines, and generates targeted, spaced-repetition practice sessions to address specific performance gaps.
 
-## Feature Matrix
 
-| Feature | Description | Support Level |
-| :--- | :--- | :--- |
-| **Multi-Platform Import** | Aggregation of history from Chess.com and Lichess. | ✅ Full |
-| **Engine Analysis** | Server-side analysis using Stockfish 16+. | ✅ Full |
-| **Move Classification** | Algorithmic detection of Brilliances, Mistakes, and Blunders. | ✅ Full |
-| **Practice Mode** | Interactive replay of tactical errors from your own games. | ✅ Full |
-| **Data Visualization** | Heatmaps and trend analysis for long-term improvement tracking. | ⚠️ Partial |
-| **Bulk Processing** | Asynchronous queuing for heavy analysis workloads. | ✅ Full |
 
 ## Quick Start
 
@@ -78,6 +69,17 @@ pytest tests/ -v
 - **Analysis Engine**: Stockfish
 - **Data Persistence**: SQLite (Application Data), Redis (Task Queue)
 - **Frontend**: Vanilla JavaScript, Tailwind CSS
+
+## Feature Matrix
+
+| Feature | Description | Support Level |
+| :--- | :--- | :--- |
+| **Multi-Platform Import** | Aggregation of history from Chess.com and Lichess. | Full Support |
+| **Engine Analysis** | Server-side analysis using Stockfish 16+. | Full Support |
+| **Move Classification** | Algorithmic detection of Brilliances, Mistakes, and Blunders. | Full Support |
+| **Practice Mode** | Interactive replay of tactical errors from your own games. | Full Support |
+| **Data Visualization** | Heatmaps and trend analysis for long-term improvement tracking. | Partial |
+| **Bulk Processing** | Asynchronous queuing for heavy analysis workloads. | Full Support |
 
 ## License
 
