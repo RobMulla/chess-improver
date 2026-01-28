@@ -80,3 +80,92 @@ Analysis is CPU-intensive. We use Redis and RQ (Redis Queue) to offload these ta
 - **Database**: SQLite (auto-created).
 - **Redis**: Must be running for background tasks.
 - **Env Vars**: `FLASK_APP=src/web/app.py`, `FLASK_DEBUG=1`.
+
+---
+
+## 🛡️ Engineering Standards
+
+We adhere to strict quality controls to ensure robustness and maintainability.
+
+### Code Quality & Formatting
+*Tools used via `ruff` and `pre-commit`*
+
+- **Linter**: `ruff` (configured in `pyproject.toml`) handles Python linting (replacing flake8/isort).
+- **Formatter**: `ruff-format` ensures consistent style (replacing Black).
+- **Security**: `bandit` scans for common security vulnerabilities (e.g., hardcoded passwords, unsafe exec).
+
+### Pre-commit Hooks
+The repo uses pre-commit hooks to enforce standards before code enters the repo.
+**Config**: `.pre-commit-config.yaml`
+**Hooks Run:**
+1.  **Trailing Whitespace / End of File**: Basic cleanup.
+2.  **Large File Check**: Prevents committing binaries > 1MB.
+3.  **Ruff**: Lints and formats code.
+4.  **Bandit**: Security audit.
+5.  **Pytest Coverage**: **(Push Only)** prevents pushing code if coverage drops below 40%.
+
+### 🧪 Testing Strategy
+
+Tests are located in `tests/` and run via `pytest`.
+
+**Key Test Suites:**
+- **`tests/test_integration.py`**: End-to-end flows (sync -> analyze -> result).
+- **`tests/test_practice_mode.py`**: Verifies puzzle generation and board orientation logic.
+- **`tests/test_win_chance.py`**: Core algorithm verification for move classification.
+- **`tests/test_golden_chesscom.py`**: Verification against "golden" reference games to ensure analytical accuracy.
+
+**Run Tests:**
+```bash
+# Run all tests
+pytest
+
+# Run with coverage report
+pytest --cov=src
+
+# Watch mode (recommended during dev)
+ptw
+```
+
+## 👩‍💻 Developer Onboarding
+
+### 1. Environment Setup
+```bash
+# 1. Clone & Enter
+git clone <repo_url>
+cd chess-improver
+
+# 2. Create Virtual Env (Recommended with uv or python)
+python -m venv venv
+source venv/bin/activate
+
+# 3. Install Dependencies
+pip install -r requirements.txt
+pip install -r requirements-dev.txt
+
+# 4. Install Pre-commit Hooks
+pre-commit install
+```
+
+### 2. Running the App
+The app requires Redis for background workers.
+
+```bash
+# Terminal 1: Redis
+redis-server
+
+# Terminal 2: Worker (Process Analysis)
+export PYTHONPATH=$PYTHONPATH:$(pwd)
+python src/workers/analyzer_worker.py
+
+# Terminal 3: Web Server
+export FLASK_APP=src/web/app.py
+export FLASK_DEBUG=1
+flask run --port 5001
+```
+
+### 3. Making Changes
+1.  Create a branch for your feature.
+2.  Write tests in `tests/` confirming the desired behavior.
+3.  Implement changes.
+4.  Run `pytest` to ensure no regressions.
+5.  Commit (Pre-commit hooks will auto-fix formatting).
