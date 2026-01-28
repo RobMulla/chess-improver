@@ -39,6 +39,7 @@ class TestOpeningAnalyzer:
             opening_name="Italian Game",
             opening_eco="C50",
             date=datetime(2024, 1, 1),
+            pgn="[Test]",
         )
         # 1 Loss (Black) - result 1-0 means White won, so Black lost
         g2 = Game(
@@ -49,6 +50,7 @@ class TestOpeningAnalyzer:
             opening_name="Italian Game",
             opening_eco="C50",
             date=datetime(2024, 1, 2),
+            pgn="[Test]",
         )
         # 1 Draw
         g3 = Game(
@@ -59,6 +61,7 @@ class TestOpeningAnalyzer:
             opening_name="Italian Game",
             opening_eco="C50",
             date=datetime(2024, 1, 3),
+            pgn="[Test]",
         )
 
         session.add_all([g1, g2, g3])
@@ -94,6 +97,7 @@ class TestOpeningAnalyzer:
                 result="0-1",
                 opening_name="Bad Opening",
                 date=datetime(2024, 1, 1),
+                pgn="[Test]",
             )
             session.add(g)
 
@@ -106,6 +110,7 @@ class TestOpeningAnalyzer:
                 result="1-0",
                 opening_name="Good Opening",
                 date=datetime(2024, 1, 1),
+                pgn="[Test]",
             )
             session.add(g)
 
