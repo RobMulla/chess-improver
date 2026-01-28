@@ -156,7 +156,9 @@ def games_list():
     session = get_session()
 
     page = request.args.get("page", 1, type=int)
-    per_page = 20
+    per_page = request.args.get("per_page", 20, type=int)
+    # Clamp per_page to reasonable limits
+    per_page = max(10, min(per_page, 100))
 
     games_query = session.query(Game).order_by(Game.date.desc())
     total_games = games_query.count()
@@ -388,6 +390,43 @@ def clear_cache():
     return jsonify({"deleted": deleted, "message": f"Cleared {deleted} cached evaluations"})
 
 
+@app.route("/api/stats/activity")
+def activity_stats():
+    """Get activity statistics for heatmap."""
+    from sqlalchemy import case, func
+
+    session = get_session()
+
+    # SQLite-specific date extraction
+    date_col = func.strftime("%Y-%m-%d", Game.date)
+
+    query = (
+        session.query(
+            date_col.label("date_str"),
+            func.count(Game.id).label("total"),
+            func.sum(case((Game.analyzed.is_(True), 1), else_=0)).label("analyzed"),
+        )
+        .group_by(date_col)
+        .order_by(date_col)
+    )
+
+    results = query.all()
+
+    activity = []
+    for row in results:
+        activity.append(
+            {
+                "date": row.date_str,
+                "count": row.total,
+                "analyzed": row.analyzed or 0,
+            }
+        )
+
+    session.close()
+
+    return jsonify({"success": True, "activity": activity})
+
+
 @app.route("/openings")
 def openings_list():
     """List opening statistics."""
@@ -473,13 +512,26 @@ def api_practice_positions():
     color = request.args.get("color", "both")
     mistake_types = request.args.get("mistake_type", "both").split(",")
     phases = request.args.get("phase", "all").split(",")
+    phases = request.args.get("phase", "all").split(",")
     limit = int(request.args.get("limit", 20))
+    start_date_str = request.args.get("start_date")
+    end_date_str = request.args.get("end_date")
 
     session = get_session()
 
     # Create Session Record
+    settings = {
+        "color": color,
+        "mistake_type": mistake_types,
+        "phase": phases,
+    }
+    if start_date_str:
+        settings["start_date"] = start_date_str
+    if end_date_str:
+        settings["end_date"] = end_date_str
+
     new_session = PracticeSession(
-        settings={"color": color, "mistake_type": mistake_types, "phase": phases},
+        settings=settings,
         total_positions=0,  # Will update later or after fetch
     )
     session.add(new_session)
@@ -512,6 +564,23 @@ def api_practice_positions():
     # Color Filter
     if color != "both":
         query = query.filter(Game.player_color == color)
+
+    # Date Filters
+    if start_date_str:
+        try:
+            start_dt = datetime.strptime(start_date_str, "%Y-%m-%d")
+            query = query.filter(Game.date >= start_dt)
+        except ValueError:
+            pass
+
+    if end_date_str:
+        try:
+            end_dt = datetime.strptime(end_date_str, "%Y-%m-%d")
+            # Set to end of day
+            end_dt = end_dt.replace(hour=23, minute=59, second=59)
+            query = query.filter(Game.date <= end_dt)
+        except ValueError:
+            pass
 
     # Fetch content
     from sqlalchemy.sql.expression import func

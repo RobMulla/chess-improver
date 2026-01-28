@@ -33,10 +33,13 @@ The Data Hub provides a comprehensive visualization of user activity and system 
 ### 3. Game Library
 A high-density, tabular interface designed for efficient management of large datasets.
 
-- **Data Grid View**: A sortable, filterable table display maximizing information density.
-- **Navigation**: Keyboard-centric navigation support for rapid browsing.
-- **Performance**: Optimized rendering for datasets exceeding thousands of records.
-- **Customization**: User-configurable pagination and row density settings.
+- **Data Grid View**: A high-density, "Excel-like" table interface.
+- **Features**:
+    - Sortable columns (click headers).
+    - Client-side filtering per column.
+    - Adjustable rows per page selector.
+    - Horizontal scrolling for extended metrics.
+- **Navigation**: Pagination controls at the top and bottom.
 
 ### 4. Game Analysis View
 A focused interface for in-depth examination of individual games.
@@ -50,13 +53,20 @@ The core training engine utilizing spaced repetition and mistake re-enforcement.
 
 - **Session Configuration**:
     - **Criteria Selection**: Filtering by color, game phase (Opening/Middlegame/Endgame), and error severity.
-    - **Temporal Filters**: Scoping practice to recent games or specific date ranges.
+    - **Temporal Filters**: Scoping practice to recent games (last week/month) or specific date ranges.
     - **Volume Control**: User-defined session length (e.g., 20 positions).
-- **Interaction Model**:
-    - **Perspective Enforcement**: Board orientation automatically aligns to the user's playing color.
-    - **Contextual Animation**: Replay of the opponent's final move prior to the tactical position.
-    - **Feedback Loop**: Visual indicators for correct/incorrect solutions with enforced retry logic.
-- **Progression**: Manual advancement controls to ensure user reflection on solved positions.
+- **Interaction Model (Game Environment)**:
+    - **Progress Tracking**: "Boxes" visualization at the top representing each puzzle in the session (Grey=Pending, Green=Correct, Red=Incorrect).
+    - **Perspective Enforcement**: Board automatically flips to player's perspective.
+    - **Context**: Animation of opponent's last move upon load.
+    - **Navigation**: Ability to step backward through the game history (clamped to the puzzle start).
+    - **Feedback Loop**:
+        - **Incorrect**: Board flashes red, allows retry (marked as failed after first attempt).
+        - **Show Opponent Response**: If incorrect again, show the engine's refutation.
+        - **Hint**: option to highlight the piece to move.
+        - **Show Answer**: Arrow indication of the correct move.
+    - **Completion**: Explicit "Next Position" action required to proceed, regardless of result.
+    - **Session Timing**: Display session duration and time per puzzle.
 
 ---
 
