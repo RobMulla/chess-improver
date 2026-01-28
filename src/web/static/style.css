@@ -459,6 +459,9 @@ tr:hover {
     display: flex;
     flex-direction: column;
     gap: 1rem;
+    height: calc(100vh - 180px); /* Fill remaining viewport height */
+    position: sticky;
+    top: var(--spacing-xl);
 }
 
 .compact-card {
@@ -551,6 +554,7 @@ tr:hover {
     display: grid;
     grid-template-columns: 1fr 400px;
     gap: 1.5rem;
+    align-items: start;
 }
 
 .move-list-container {
@@ -704,6 +708,11 @@ tr:hover {
 .board-wrapper {
     max-width: 600px;
     margin: 0 auto;
+}
+
+.sticky-board {
+    position: sticky;
+    top: var(--spacing-xl);
 }
 
 /* --- Refactored Games List (Dense/Chess.com Style) --- */
