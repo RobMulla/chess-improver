@@ -1,11 +1,9 @@
 """Flask web application for chess improvement system."""
 from datetime import datetime
 
-from flask import Flask, Response, jsonify, redirect, render_template, request, url_for
-from sqlalchemy import func
+from flask import Flask, Response, jsonify, render_template, request
 
-from src.database.models import DailyPlan, Game, Insight, Opening, Position, get_session
-from src.training.plan_generator import PlanGenerator
+from src.database.models import Game, Opening, Position, get_session
 
 # Background job queue setup
 try:
@@ -29,21 +27,9 @@ def index():
     """Dashboard homepage."""
     session = get_session()
 
-    # Get today's plan
-    today = datetime.utcnow().date()
-    plan = session.query(DailyPlan).filter(func.date(DailyPlan.date) == today).first()
-
-    # Get recent insights
-    recent_accuracy = (
-        session.query(Insight)
-        .filter_by(metric_name="avg_accuracy", time_period="last_30_days")
-        .order_by(Insight.generated_at.desc())
-        .first()
-    )
-
-    # Game stats
+    # Basic stats for dashboard
     total_games = session.query(Game).count()
-    analyzed_games = session.query(Game).filter_by(analyzed=True).count()
+    analyzed_games = session.query(Game).filter(Game.analyzed.is_(True)).count()
 
     # Top openings
     top_openings = (
@@ -58,8 +44,6 @@ def index():
 
     return render_template(
         "dashboard.html",
-        plan=plan,
-        recent_accuracy=recent_accuracy,
         total_games=total_games,
         analyzed_games=analyzed_games,
         top_openings=top_openings,
@@ -164,57 +148,6 @@ def api_sync_games():
             "message": f"Queued {len(jobs)} sync jobs",
         }
     )
-
-
-@app.route("/plan")
-@app.route("/plan/<date_str>")
-def daily_plan(date_str=None):
-    """View daily training plan."""
-    session = get_session()
-
-    # Parse date
-    if date_str:
-        plan_date = datetime.strptime(date_str, "%Y-%m-%d").date()
-    else:
-        plan_date = datetime.utcnow().date()
-
-    # Get plan
-    plan = session.query(DailyPlan).filter(func.date(DailyPlan.date) == plan_date).first()
-
-    session.close()
-
-    return render_template("daily_plan.html", plan=plan, plan_date=plan_date)
-
-
-@app.route("/plan/generate", methods=["POST"])
-def generate_plan():
-    """Generate new daily plan."""
-    generator = PlanGenerator()
-    generator.generate_plan()
-    generator.close()
-
-    return redirect(url_for("daily_plan"))
-
-
-@app.route("/plan/task/<int:plan_id>/<int:task_id>/complete", methods=["POST"])
-def complete_task(plan_id, task_id):
-    """Mark a task as complete."""
-    session = get_session()
-
-    plan = session.query(DailyPlan).get(plan_id)
-    if plan:
-        tasks = plan.tasks
-        for task in tasks:
-            if task["id"] == task_id:
-                task["completed"] = not task["completed"]  # Toggle
-                break
-
-        plan.tasks = tasks
-        session.commit()
-
-    session.close()
-
-    return jsonify({"success": True})
 
 
 @app.route("/games")
@@ -518,23 +451,6 @@ def openings_list():
     session.close()
 
     return render_template("openings.html", openings=openings, color_filter=color_filter)
-
-
-@app.route("/insights")
-def insights():
-    """View insights and analytics."""
-    session = get_session()
-
-    accuracy_insights = (
-        session.query(Insight)
-        .filter_by(category="accuracy")
-        .order_by(Insight.generated_at.desc())
-        .all()
-    )
-
-    session.close()
-
-    return render_template("insights.html", accuracy_insights=accuracy_insights)
 
 
 @app.route("/practice")

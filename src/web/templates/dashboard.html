@@ -1,218 +1,110 @@
-<!DOCTYPE html>
-<html lang="en">
+{% extends "base.html" %}
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard - Chess Improver</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-</head>
+{% block title %}Dashboard - Chess Improver{% endblock %}
 
-<body>
-    <!-- Sidebar Navigation -->
-    <aside class="sidebar">
-        <div class="sidebar-brand">
-            <h1><span class="icon">♟️</span> Chess Improver</h1>
+{% block content %}
+<header class="mb-8">
+    <h1 class="text-3xl font-bold">Dashboard</h1>
+    <p class="text-gray-400">Your chess improvement overview</p>
+</header>
+
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+    <div class="bg-gray-800 p-6 rounded-xl border border-gray-700 shadow-sm">
+        <div class="text-3xl font-bold mb-1">{{ total_games }}</div>
+        <div class="text-sm text-gray-400 uppercase tracking-wider">Total Games</div>
+    </div>
+
+    <div class="bg-gray-800 p-6 rounded-xl border border-gray-700 shadow-sm">
+        <div class="text-3xl font-bold mb-1">{{ analyzed_games }}</div>
+        <div class="text-sm text-gray-400 uppercase tracking-wider">Analyzed Games</div>
+    </div>
+
+    <div class="bg-gray-800 p-6 rounded-xl border border-gray-700 shadow-sm">
+        <div class="text-3xl font-bold mb-1">
+            {{ ((analyzed_games / total_games * 100) if total_games > 0 else 0)|round|int }}%
+        </div>
+        <div class="text-sm text-gray-400 uppercase tracking-wider">Analysis Progress</div>
+    </div>
+
+    <div class="bg-blue-900/30 p-6 rounded-xl border border-blue-800/50 shadow-sm flex flex-col justify-center">
+        <a href="/practice" class="text-center font-semibold text-blue-400 hover:text-blue-300 transition-colors">
+            🎯 Start Practice Session →
+        </a>
+    </div>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+    <!-- Top Openings -->
+    {% if top_openings %}
+    <div class="bg-gray-800 rounded-xl border border-gray-700 shadow-sm overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-700 flex justify-between items-center">
+            <h2 class="text-xl font-bold">Top Openings</h2>
+            <a href="/openings" class="text-sm text-blue-400 hover:text-blue-300">View All →</a>
         </div>
 
-        <nav class="sidebar-nav">
-            <div class="nav-section">
-                <div class="nav-section-title">Overview</div>
-                <a href="/" class="nav-link active">
-                    <span class="nav-icon">📊</span>
-                    Dashboard
-                </a>
-                <a href="/plan" class="nav-link">
-                    <span class="nav-icon">📋</span>
-                    Daily Plan
-                    {% if plan and plan.tasks %}
-                    <span class="nav-badge">{{ plan.tasks|length }}</span>
-                    {% endif %}
-                </a>
-            </div>
-
-            <div class="nav-section">
-                <div class="nav-section-title">Analysis</div>
-                <a href="/games" class="nav-link">
-                    <span class="nav-icon">🎮</span>
-                    Games
-                    <span class="nav-badge">{{ total_games }}</span>
-                </a>
-                <a href="/openings" class="nav-link">
-                    <span class="nav-icon">📖</span>
-                    Openings
-                </a>
-                <a href="/insights" class="nav-link">
-                    <span class="nav-icon">💡</span>
-                    Insights
-                </a>
-            </div>
-
-            <div class="nav-section">
-                <div class="nav-section-title">Training</div>
-                <a href="/practice" class="nav-link">
-                    <span class="nav-icon">🎯</span>
-                    Practice Mistakes
-                </a>
-                <a href="/repertoire" class="nav-link">
-                    <span class="nav-icon">📚</span>
-                    My Repertoire
-                </a>
-            </div>
-        </nav>
-    </aside>
-
-    <!-- Main Content -->
-    <main class="main-layout">
-        <header class="content-header">
-            <h1>Dashboard</h1>
-            <p>Your chess improvement overview</p>
-        </header>
-
-        <div class="content-body">
-            <!-- Statistics Grid -->
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <div class="stat-value">{{ total_games }}</div>
-                    <div class="stat-label">Total Games</div>
-                </div>
-
-                <div class="stat-card">
-                    <div class="stat-value">{{ analyzed_games }}</div>
-                    <div class="stat-label">Analyzed Games</div>
-                </div>
-
-                {% if recent_accuracy %}
-                <div class="stat-card">
-                    <div class="stat-value">{{ "%.1f"|format(recent_accuracy.metric_value) }}%</div>
-                    <div class="stat-label">Avg Accuracy (30d)</div>
-                </div>
-                {% else %}
-                <div class="stat-card">
-                    <div class="stat-value">—</div>
-                    <div class="stat-label">Avg Accuracy (30d)</div>
-                </div>
-                {% endif %}
-
-                <div class="stat-card">
-                    <div class="stat-value">{{ ((analyzed_games / total_games * 100) if total_games > 0 else
-                        0)|round|int }}%</div>
-                    <div class="stat-label">Analysis Progress</div>
-                </div>
-            </div>
-
-            <!-- Today's Training Plan -->
-            {% if plan %}
-            <div class="card">
-                <div class="card-header">
-                    <h2 class="card-title">Today's Training Plan</h2>
-                    <a href="/plan" class="btn btn-secondary">View Full Plan →</a>
-                </div>
-
-                {% if plan.tasks %}
-                <div class="task-list">
-                    {% for task in plan.tasks[:3] %}
-                    <div class="task-item">
-                        <div class="task-info">
-                            <h4>{{ task.title }}</h4>
-                            <p>{{ task.duration }}</p>
-                        </div>
-                        {% if task.completed %}
-                        <span class="badge badge-success">✓ Done</span>
-                        {% endif %}
-                    </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-left">
+                <thead class="bg-gray-900/50 text-gray-400 text-xs uppercase">
+                    <tr>
+                        <th class="px-6 py-3">Opening</th>
+                        <th class="px-6 py-3 text-center">Games</th>
+                        <th class="px-6 py-3 text-center">Record</th>
+                        <th class="px-6 py-3 text-right">Win Rate</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-700">
+                    {% for opening in top_openings %}
+                    <tr class="hover:bg-gray-700/30 transition-colors">
+                        <td class="px-6 py-4 font-semibold">{{ opening.name }}</td>
+                        <td class="px-6 py-4 text-center">{{ opening.games_played }}</td>
+                        <td class="px-6 py-4 text-center text-sm text-gray-300">
+                            {{ opening.wins }}-{{ opening.draws }}-{{ opening.losses }}
+                        </td>
+                        <td class="px-6 py-4 text-right">
+                            <span class="px-2 py-1 rounded text-xs font-bold
+                                {% if opening.win_rate > 0.5 %}bg-green-900/40 text-green-400
+                                {% elif opening.win_rate > 0.4 %}bg-yellow-900/40 text-yellow-400
+                                {% else %}bg-red-900/40 text-red-400{% endif %}">
+                                {{ (opening.win_rate * 100)|round|int }}%
+                            </span>
+                        </td>
+                    </tr>
                     {% endfor %}
-
-                    {% if plan.tasks|length > 3 %}
-                    <p style="color: var(--text-muted); margin-top: 1rem;">
-                        + {{ plan.tasks|length - 3 }} more tasks
-                    </p>
-                    {% endif %}
-                </div>
-                {% endif %}
-            </div>
-            {% else %}
-            <div class="card">
-                <div class="card-header">
-                    <h2 class="card-title">Today's Training Plan</h2>
-                    <form action="/plan/generate" method="POST" style="display: inline;">
-                        <button type="submit" class="btn btn-primary">Generate Today's Plan</button>
-                    </form>
-                </div>
-                <p style="color: var(--text-muted)">No plan for today yet. Generate one to get started!</p>
-            </div>
-            {% endif %}
-
-            <!-- Top Openings -->
-            {% if top_openings %}
-            <div class="card">
-                <div class="card-header">
-                    <h2 class="card-title">Top Openings</h2>
-                    <a href="/openings" class="btn btn-secondary">View All →</a>
-                </div>
-
-                <div class="table-container">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Opening</th>
-                                <th>Games</th>
-                                <th>Record</th>
-                                <th>Win Rate</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for opening in top_openings %}
-                            <tr>
-                                <td style="font-weight: 600;">{{ opening.name }}</td>
-                                <td>{{ opening.games_played }}</td>
-                                <td>{{ opening.wins }}-{{ opening.draws }}-{{ opening.losses }}</td>
-                                <td>
-                                    <span
-                                        class="badge {% if opening.win_rate > 0.5 %}badge-success{% elif opening.win_rate > 0.4 %}badge-warning{% else %}badge-error{% endif %}">
-                                        {{ (opening.win_rate * 100)|round|int }}%
-                                    </span>
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-            {% endif %}
+                </tbody>
+            </table>
         </div>
-    </main>
+    </div>
+    {% endif %}
 
-    <style>
-        .task-list {
-            display: flex;
-            flex-direction: column;
-            gap: var(--spacing-md);
-        }
-
-        .task-item {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: var(--spacing-md);
-            background: var(--bg-tertiary);
-            border-radius: 8px;
-        }
-
-        .task-item h4 {
-            font-size: 1rem;
-            font-weight: 600;
-            margin-bottom: 0.25rem;
-        }
-
-        .task-item p {
-            font-size: 0.875rem;
-            color: var(--text-muted);
-        }
-    </style>
-</body>
-
-</html>
+    <!-- Quick Actions -->
+    <div class="bg-gray-800 rounded-xl border border-gray-700 shadow-sm p-6">
+        <h2 class="text-xl font-bold mb-6">Quick Actions</h2>
+        <div class="space-y-4">
+            <a href="/games"
+                class="block p-4 rounded-lg bg-gray-700/50 hover:bg-gray-700 transition-colors flex items-center gap-4">
+                <span class="text-2xl">⚡</span>
+                <div>
+                    <div class="font-bold">Sync New Games</div>
+                    <div class="text-sm text-gray-400">Pull latest games from your accounts</div>
+                </div>
+            </a>
+            <a href="/practice"
+                class="block p-4 rounded-lg bg-gray-700/50 hover:bg-gray-700 transition-colors flex items-center gap-4">
+                <span class="text-2xl">♟️</span>
+                <div>
+                    <div class="font-bold">Blunder Buster</div>
+                    <div class="text-sm text-gray-400">Practice your past positional mistakes</div>
+                </div>
+            </a>
+            <a href="/settings"
+                class="block p-4 rounded-lg bg-gray-700/50 hover:bg-gray-700 transition-colors flex items-center gap-4">
+                <span class="text-2xl">⚙️</span>
+                <div>
+                    <div class="font-bold">Settings</div>
+                    <div class="text-sm text-gray-400">Manage accounts and preferences</div>
+                </div>
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

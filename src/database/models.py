@@ -140,53 +140,6 @@ class Opening(Base):
         return f"<Opening {self.eco_code} {self.name}>"
 
 
-class DailyPlan(Base):
-    """Daily training plan."""
-
-    __tablename__ = "daily_plans"
-
-    id = Column(Integer, primary_key=True)
-    date = Column(DateTime, unique=True, nullable=False)
-    tasks = Column(JSON, nullable=False)  # List of task objects
-    created_at = Column(DateTime, default=datetime.utcnow)
-
-    def __repr__(self):
-        return f"<DailyPlan {self.date.date()}>"
-
-
-class Insight(Base):
-    """Generated insights and analytics."""
-
-    __tablename__ = "insights"
-
-    id = Column(Integer, primary_key=True)
-    metric_name = Column(String(100), nullable=False)
-    metric_value = Column(Float)
-    metric_data = Column(JSON)  # For complex data
-    time_period = Column(String(50))  # 'last_week', 'last_month', 'all_time'
-    category = Column(String(50))  # 'accuracy', 'openings', 'time_control', etc.
-    generated_at = Column(DateTime, default=datetime.utcnow)
-
-    def __repr__(self):
-        return f"<Insight {self.metric_name} ({self.time_period})>"
-
-
-class GameReview(Base):
-    """AI-generated game reviews."""
-
-    __tablename__ = "game_reviews"
-
-    id = Column(Integer, primary_key=True)
-    game_id = Column(Integer, ForeignKey("games.id"), nullable=False, unique=True)
-    review_text = Column(Text, nullable=False)
-    key_mistakes = Column(JSON)  # List of critical mistakes
-    improvements = Column(JSON)  # List of improvement suggestions
-    generated_at = Column(DateTime, default=datetime.utcnow)
-
-    def __repr__(self):
-        return f"<GameReview for game {self.game_id}>"
-
-
 class OpeningRepertoire(Base):
     """User's opening repertoire."""
 
