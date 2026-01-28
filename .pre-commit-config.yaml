@@ -38,7 +38,7 @@ repos:
   - repo: https://github.com/riverside-healthcare/djLint
     rev: v1.34.1
     hooks:
-      - id: djlint-reformat
+      # - id: djlint-reformat  # Disabled: breaks Jinja expressions
       - id: djlint
 
   # Test coverage enforcement
@@ -51,3 +51,10 @@ repos:
         pass_filenames: false
         always_run: false
         stages: [push]  # Only run on push, not every commit
+      - id: template-syntax-check
+        name: Check Jinja2 template syntax
+        entry: bash -c 'cd /Users/robmulla/Repos/chess-improver && source venv/bin/activate && pytest tests/test_templates.py -q'
+        language: system
+        pass_filenames: false
+        files: \.html$
+        types: [html]

@@ -1,405 +1,401 @@
 <!DOCTYPE html>
 <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Game Viewer - Chess Improver</title>
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
-              rel="stylesheet">
-        <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-        <link rel="stylesheet"
-              href="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.css">
-    </head>
-    <body>
-        <aside class="sidebar">
-            <div class="sidebar-brand">
-                <h1>
-                    <span class="icon">♟️</span> Chess Improver
-                </h1>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game Viewer - Chess Improver</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.css">
+</head>
+
+<body>
+    <aside class="sidebar">
+        <div class="sidebar-brand">
+            <h1>
+                <span class="icon">♟️</span> Chess Improver
+            </h1>
+        </div>
+        <nav class="sidebar-nav">
+            <div class="nav-section">
+                <div class="nav-section-title">Overview</div>
+                <a href="/" class="nav-link">
+                    <span class="nav-icon">📊</span>
+                    Dashboard
+                </a>
+                <a href="/plan" class="nav-link">
+                    <span class="nav-icon">📋</span>
+                    Daily Plan
+                </a>
             </div>
-            <nav class="sidebar-nav">
-                <div class="nav-section">
-                    <div class="nav-section-title">Overview</div>
-                    <a href="/" class="nav-link">
-                        <span class="nav-icon">📊</span>
-                        Dashboard
-                    </a>
-                    <a href="/plan" class="nav-link">
-                        <span class="nav-icon">📋</span>
-                        Daily Plan
-                    </a>
+            <div class="nav-section">
+                <div class="nav-section-title">Analysis</div>
+                <a href="/games" class="nav-link active">
+                    <span class="nav-icon">🎮</span>
+                    Games
+                </a>
+                <a href="/openings" class="nav-link">
+                    <span class="nav-icon">📖</span>
+                    Openings
+                </a>
+                <a href="/insights" class="nav-link">
+                    <span class="nav-icon">💡</span>
+                    Insights
+                </a>
+            </div>
+            <div class="nav-section">
+                <div class="nav-section-title">Training</div>
+                <a href="/practice" class="nav-link">
+                    <span class="nav-icon">🎯</span>
+                    Practice Mistakes
+                </a>
+                <a href="/repertoire" class="nav-link">
+                    <span class="nav-icon">📚</span>
+                    My Repertoire
+                </a>
+            </div>
+        </nav>
+    </aside>
+    <main class="main-layout">
+        <header class="content-header">
+            <div class="header-flex">
+                <div>
+                    <h1>{{ game.opening_name or 'Game Viewer' }}</h1>
+                    <p>{{ game.date.strftime("%B %d, %Y at %H:%M") if game.date else 'Date unknown' }}</p>
                 </div>
-                <div class="nav-section">
-                    <div class="nav-section-title">Analysis</div>
-                    <a href="/games" class="nav-link active">
-                        <span class="nav-icon">🎮</span>
-                        Games
-                    </a>
-                    <a href="/openings" class="nav-link">
-                        <span class="nav-icon">📖</span>
-                        Openings
-                    </a>
-                    <a href="/insights" class="nav-link">
-                        <span class="nav-icon">💡</span>
-                        Insights
-                    </a>
-                </div>
-                <div class="nav-section">
-                    <div class="nav-section-title">Training</div>
-                    <a href="/practice" class="nav-link">
-                        <span class="nav-icon">🎯</span>
-                        Practice Mistakes
-                    </a>
-                    <a href="/repertoire" class="nav-link">
-                        <span class="nav-icon">📚</span>
-                        My Repertoire
-                    </a>
-                </div>
-            </nav>
-        </aside>
-        <main class="main-layout">
-            <header class="content-header">
-                <div class="header-flex">
-                    <div>
-                        <h1>{{ game.opening_name or 'Game Viewer' }}</h1>
-                        <p>{{ game.date.strftime("%B %d, %Y at %H:%M") if game.date else 'Date unknown' }}</p>
-                    </div>
-                    <div class="header-actions">
-                        <button id="star-btn"
-                                class="btn {% if game.starred %}btn-primary{% else %}btn-secondary{% endif %}"
-                                onclick="toggleStar()">
-                            <span id="star-icon">
-                                {% if game.starred %}
-                                    ★
-                                {% else %}
-                                    ☆
-                                {% endif %}
-                            </span>
-                            <span id="star-text">
-                                {% if game.starred %}
-                                    Starred
-                                {% else %}
-                                    Star
-                                {% endif %}
-                            </span>
-                        </button>
-                        <a href="/games/{{ game.id }}/export"
-                           class="btn btn-secondary"
-                           title="Download PGN">
-                            <span class="icon">📥</span> PGN
-                        </a>
-                        <a href="/games" class="btn btn-secondary">← Back to Games</a>
-                    </div>
-                </div>
-            </header>
-            <div class="content-body">
-                <div class="game-layout">
-                    <!-- Chess Board -->
-                    <div class="card sticky-board">
-                        <div class="board-header">
-                            <div class="board-badges">
-                                <span class="badge {% if is_win %}badge-success{% elif is_draw %}badge-warning{% else %}badge-error{% endif %}">
-                                    {{ result_text }}
-                                </span>
-                                <span class="badge badge-info">{{ game.platform }}</span>
-                                <span class="badge {% if game.player_color == 'white' %}badge-info{% else %}badge-secondary{% endif %}">
-                                    Playing {{ game.player_color }}
-                                </span>
-                            </div>
-                            {% if game.game_url %}
-                                <a href="{{ game.game_url }}"
-                                   target="_blank"
-                                   class="external-link"
-                                   title="View on {{ game.platform }}">↗</a>
+                <div class="header-actions">
+                    <button id="star-btn" class="btn {% if game.starred %}btn-primary{% else %}btn-secondary{% endif %}"
+                        onclick="toggleStar()">
+                        <span id="star-icon">
+                            {% if game.starred %}
+                            ★
+                            {% else %}
+                            ☆
                             {% endif %}
+                        </span>
+                        <span id="star-text">
+                            {% if game.starred %}
+                            Starred
+                            {% else %}
+                            Star
+                            {% endif %}
+                        </span>
+                    </button>
+                    <a href="/games/{{ game.id }}/export" class="btn btn-secondary" title="Download PGN">
+                        <span class="icon">📥</span> PGN
+                    </a>
+                    <a href="/games" class="btn btn-secondary">← Back to Games</a>
+                </div>
+            </div>
+        </header>
+        <div class="content-body">
+            <div class="game-layout">
+                <!-- Chess Board -->
+                <div class="card sticky-board">
+                    <div class="board-header">
+                        <div class="board-badges">
+                            <span
+                                class="badge {% if is_win %}badge-success{% elif is_draw %}badge-warning{% else %}badge-error{% endif %}">
+                                {{ result_text }}
+                            </span>
+                            <span class="badge badge-info">{{ game.platform }}</span>
+                            <span
+                                class="badge {% if game.player_color == 'white' %}badge-info{% else %}badge-secondary{% endif %}">
+                                Playing {{ game.player_color }}
+                            </span>
                         </div>
-                        <div class="board-wrapper">
-                            <!-- Score Bar (Future) -->
-                            <div id="game-board" style="width: 100%"></div>
-                        </div>
-                        <div class="board-controls">
-                            <button id="btn-start" class="btn btn-secondary" title="Start">⏮</button>
-                            <button id="btn-prev" class="btn btn-secondary" title="Previous">←</button>
-                            <button id="btn-next" class="btn btn-primary" title="Next">Next →</button>
-                            <button id="btn-end" class="btn btn-secondary" title="End">⏭</button>
-                            <button id="btn-flip" class="btn btn-secondary" title="Flip Board">🔄</button>
-                        </div>
-                        <div class="analysis-status">
-                            {% if not game.analyzed %}<p class="text-muted" style="margin-bottom: 0.5rem;">Not analyzed yet</p>{% endif %}
-                            <button id="analyze-btn" class="btn btn-primary" onclick="analyzeGame()">
-                                <span id="analyze-text">
-                                    {% if game.analyzed %}
-                                        Re-analyze Game
-                                    {% else %}
-                                        Analyze Game
-                                    {% endif
-                                    %}
-                                </span>
-                                <span id="analyze-loading" style="display: none;">⏳ Analyzing...</span>
-                            </button>
-                        </div>
+                        {% if game.game_url %}
+                        <a href="{{ game.game_url }}" target="_blank" class="external-link"
+                            title="View on {{ game.platform }}">↗</a>
+                        {% endif %}
                     </div>
-                    <!-- Move List & Info -->
-                    <div class="game-sidebar">
-                        <div class="tabs-header">
-                            <button class="tab-btn active" onclick="switchTab('moves-tab')">Moves</button>
-                            <button class="tab-btn" onclick="switchTab('analysis-tab')">Analysis</button>
-                        </div>
-                        <!-- Moves Tab -->
-                        <div id="moves-tab" class="tab-content active">
-                            <div class="move-table-container" style="flex: 1; overflow-y: auto;">
-                                <table class="moves-table" style="width: 100%; border-collapse: collapse;">
-                                    <thead>
-                                        <tr style="background: var(--bg-tertiary);
+                    <div class="board-wrapper">
+                        <!-- Score Bar (Future) -->
+                        <div id="game-board" style="width: 100%"></div>
+                    </div>
+                    <div class="board-controls">
+                        <button id="btn-start" class="btn btn-secondary" title="Start">⏮</button>
+                        <button id="btn-prev" class="btn btn-secondary" title="Previous">←</button>
+                        <button id="btn-next" class="btn btn-primary" title="Next">Next →</button>
+                        <button id="btn-end" class="btn btn-secondary" title="End">⏭</button>
+                        <button id="btn-flip" class="btn btn-secondary" title="Flip Board">🔄</button>
+                    </div>
+                    <div class="analysis-status">
+                        {% if not game.analyzed %}<p class="text-muted" style="margin-bottom: 0.5rem;">Not analyzed yet
+                        </p>{% endif %}
+                        <button id="analyze-btn" class="btn btn-primary" onclick="analyzeGame()">
+                            <span id="analyze-text">
+                                {% if game.analyzed %}
+                                Re-analyze Game
+                                {% else %}
+                                Analyze Game
+                                {% endif %}
+                            </span>
+                            <span id="analyze-loading" style="display: none;">⏳ Analyzing...</span>
+                        </button>
+                    </div>
+                </div>
+                <!-- Move List & Info -->
+                <div class="game-sidebar">
+                    <div class="tabs-header">
+                        <button class="tab-btn active" onclick="switchTab('moves-tab')">Moves</button>
+                        <button class="tab-btn" onclick="switchTab('analysis-tab')">Analysis</button>
+                    </div>
+                    <!-- Moves Tab -->
+                    <div id="moves-tab" class="tab-content active">
+                        <div class="move-table-container" style="flex: 1; overflow-y: auto;">
+                            <table class="moves-table" style="width: 100%; border-collapse: collapse;">
+                                <thead>
+                                    <tr style="background: var(--bg-tertiary);
                                                    position: sticky;
                                                    top: 0;
                                                    z-index: 1">
-                                            <th style="padding: 0.5rem;
+                                        <th style="padding: 0.5rem;
                                                        text-align: center;
                                                        width: 40px;
                                                        color: var(--text-muted);
                                                        background: var(--bg-tertiary)">#</th>
-                                            <th style="padding: 0.5rem;
+                                        <th style="padding: 0.5rem;
                                                        text-align: left;
                                                        background: var(--bg-tertiary)">White</th>
-                                            <th style="padding: 0.5rem;
+                                        <th style="padding: 0.5rem;
                                                        text-align: left;
                                                        background: var(--bg-tertiary)">Black</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="move-list-body">
-                                        <!-- Moves populated by JS -->
-                                    </tbody>
-                                </table>
-                            </div>
+                                    </tr>
+                                </thead>
+                                <tbody id="move-list-body">
+                                    <!-- Moves populated by JS -->
+                                </tbody>
+                            </table>
                         </div>
-                        <!-- Analysis Tab -->
-                        <div id="analysis-tab" class="tab-content">
-                            <!-- Game Info -->
-                            <div class="card compact-card">
-                                <h3>Game Info</h3>
-                                <div class="info-grid">
-                                    <div class="info-row" style="grid-column: span 2;">
-                                        <span class="text-muted">Opening</span>
-                                        <strong title="{{ game.opening_name }} ({{ game.opening_eco }})">
-                                            {{ (game.opening_name or 'Unknown')|truncate(30) }}
-                                            <span class="text-xs text-gray-500">{{ game.opening_eco }}</span>
-                                        </strong>
-                                    </div>
-                                    <div class="info-row">
-                                        <span class="text-muted">Time Control</span>
-                                        <strong>{{ game.time_control or '-' }}</strong>
-                                    </div>
-                                    <div class="info-row">
-                                        <span class="text-muted">Rating</span>
-                                        <strong>{{ game.player_rating or '?' }}</strong>
-                                    </div>
-                                    <div class="info-row">
-                                        <span class="text-muted">Total Moves</span>
-                                        <strong>{{ game.total_moves or '?' }}</strong>
-                                    </div>
+                    </div>
+                    <!-- Analysis Tab -->
+                    <div id="analysis-tab" class="tab-content">
+                        <!-- Game Info -->
+                        <div class="card compact-card">
+                            <h3>Game Info</h3>
+                            <div class="info-grid">
+                                <div class="info-row" style="grid-column: span 2;">
+                                    <span class="text-muted">Opening</span>
+                                    <strong title="{{ game.opening_name }} ({{ game.opening_eco }})">
+                                        {{ (game.opening_name or 'Unknown')|truncate(30) }}
+                                        <span class="text-xs text-gray-500">{{ game.opening_eco }}</span>
+                                    </strong>
+                                </div>
+                                <div class="info-row">
+                                    <span class="text-muted">Time Control</span>
+                                    <strong>{{ game.time_control or '-' }}</strong>
+                                </div>
+                                <div class="info-row">
+                                    <span class="text-muted">Rating</span>
+                                    <strong>{{ game.player_rating or '?' }}</strong>
+                                </div>
+                                <div class="info-row">
+                                    <span class="text-muted">Total Moves</span>
+                                    <strong>{{ game.total_moves or '?' }}</strong>
                                 </div>
                             </div>
-                            <!-- Accuracy Stats -->
-                            {% if game.player_accuracy is not none %}
-                                <div class="card compact-card">
-                                    <h3>Accuracy</h3>
-                                    <div class="accuracy-grid"
-                                         style="display: flex;
+                        </div>
+                        <!-- Accuracy Stats -->
+                        {% if game.player_accuracy is not none %}
+                        <div class="card compact-card">
+                            <h3>Accuracy</h3>
+                            <div class="accuracy-grid" style="display: flex;
                                                 flex-direction: column;
                                                 gap: 1rem">
-                                        <!-- Player -->
-                                        <div>
-                                            <div class="info-row">
-                                                <span class="text-muted">You</span>
-                                                <strong class="text-accent">{{ "%.1f"|format(game.player_accuracy) }}%</strong>
-                                            </div>
-                                            <div class="progress-bar">
-                                                <div class="progress-fill" style="width: {{ game.player_accuracy }}%;"></div>
-                                            </div>
-                                        </div>
-                                        <!-- Phase Breakdown -->
-                                        {% if game.opening_accuracy %}
-                                            <div style="display: grid;
+                                <!-- Player -->
+                                <div>
+                                    <div class="info-row">
+                                        <span class="text-muted">You</span>
+                                        <strong class="text-accent">{{ "%.1f"|format(game.player_accuracy) }}%</strong>
+                                    </div>
+                                    <div class="progress-bar">
+                                        <div class="progress-fill" style="width: {{ game.player_accuracy }}%;"></div>
+                                    </div>
+                                </div>
+                                <!-- Phase Breakdown -->
+                                {% if game.opening_accuracy %}
+                                <div style="display: grid;
                                                         grid-template-columns: 1fr 1fr 1fr;
                                                         gap: 4px;
                                                         margin-top: 0.5rem">
-                                                <div class="text-center p-1 bg-gray-800 rounded">
-                                                    <div class="text-[10px] text-gray-500 uppercase">Open</div>
-                                                    <div class="font-bold text-xs">{{ "%.0f"|format(game.opening_accuracy) }}%</div>
-                                                </div>
-                                                <div class="text-center p-1 bg-gray-800 rounded">
-                                                    <div class="text-[10px] text-gray-500 uppercase">Mid</div>
-                                                    <div class="font-bold text-xs">{{ "%.0f"|format(game.middlegame_accuracy) }}%</div>
-                                                </div>
-                                                <div class="text-center p-1 bg-gray-800 rounded">
-                                                    <div class="text-[10px] text-gray-500 uppercase">End</div>
-                                                    <div class="font-bold text-xs">{{ "%.0f"|format(game.endgame_accuracy) }}%</div>
-                                                </div>
-                                            </div>
-                                        {% endif %}
-                                        <!-- Opponent -->
-                                        {% if game.opponent_accuracy %}
-                                            <div style="margin-top: 0.5rem;
+                                    <div class="text-center p-1 bg-gray-800 rounded">
+                                        <div class="text-[10px] text-gray-500 uppercase">Open</div>
+                                        <div class="font-bold text-xs">{{ "%.0f"|format(game.opening_accuracy) }}%</div>
+                                    </div>
+                                    <div class="text-center p-1 bg-gray-800 rounded">
+                                        <div class="text-[10px] text-gray-500 uppercase">Mid</div>
+                                        <div class="font-bold text-xs">{{ "%.0f"|format(game.middlegame_accuracy) }}%
+                                        </div>
+                                    </div>
+                                    <div class="text-center p-1 bg-gray-800 rounded">
+                                        <div class="text-[10px] text-gray-500 uppercase">End</div>
+                                        <div class="font-bold text-xs">{{ "%.0f"|format(game.endgame_accuracy) }}%</div>
+                                    </div>
+                                </div>
+                                {% endif %}
+                                <!-- Opponent -->
+                                {% if game.opponent_accuracy %}
+                                <div style="margin-top: 0.5rem;
                                                         border-top: 1px solid var(--border-subtle);
                                                         padding-top: 0.5rem">
-                                                <div class="info-row">
-                                                    <span class="text-muted">Opponent</span>
-                                                    <strong style="color: var(--text-secondary);">{{ "%.1f"|format(game.opponent_accuracy) }}%</strong>
-                                                </div>
-                                                <div class="progress-bar" style="background: var(--bg-tertiary);">
-                                                    <div class="progress-fill"
-                                                         style="width: {{ game.opponent_accuracy }}%;
+                                    <div class="info-row">
+                                        <span class="text-muted">Opponent</span>
+                                        <strong style="color: var(--text-secondary);">{{
+                                            "%.1f"|format(game.opponent_accuracy) }}%</strong>
+                                    </div>
+                                    <div class="progress-bar" style="background: var(--bg-tertiary);">
+                                        <div class="progress-fill" style="width: {{ game.opponent_accuracy }}%;
                                                                 background: var(--text-secondary)"></div>
-                                                </div>
-                                            </div>
+                                    </div>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <!-- Move Quality -->
+                        <div class="card compact-card">
+                            <h3 style="margin-bottom: 1rem;">Move Quality</h3>
+                            <div style="display: grid; grid-template-columns: 1fr; gap: 1rem;">
+                                <!-- Player Stats -->
+                                <div style="border-bottom: 1px solid var(--border-subtle);
+                                                    padding-bottom: 1rem">
+                                    <h4 class="text-muted" style="margin-bottom: 0.5rem;
+                                                       font-size: 0.75rem;
+                                                       text-transform: uppercase">
+                                        You ({{ game.player_color|capitalize }})
+                                    </h4>
+                                    <div class="move-quality-grid">
+                                        {% if game.brilliant_moves %}
+                                        <div class="move-quality-item">
+                                            <span>!!
+                                                Brilliant</span><strong>{{ game.brilliant_moves }}</strong>
+                                        </div>
+                                        {%
+                                        endif %}
+                                        {% if game.great_moves %}
+                                        <div class="move-quality-item">
+                                            <span>!
+                                                Great</span><strong>{{ game.great_moves }}</strong>
+                                        </div>
+                                        {% endif %}
+                                        {% if game.best_moves %}
+                                        <div class="move-quality-item">
+                                            <span>★
+                                                Best</span><strong>{{ game.best_moves }}</strong>
+                                        </div>
+                                        {% endif %}
+                                        {% if game.excellent_moves %}
+                                        <div class="move-quality-item">
+                                            <span>✓
+                                                Excellent</span><strong>{{ game.excellent_moves }}</strong>
+                                        </div>
+                                        {%
+                                        endif %}
+                                        {% if game.good_moves %}
+                                        <div class="move-quality-item">
+                                            <span>✓
+                                                Good</span><strong>{{ game.good_moves }}</strong>
+                                        </div>
+                                        {% endif %}
+                                        {% if game.inaccuracy_moves %}
+                                        <div class="move-quality-item">
+                                            <span>?!
+                                                Inaccuracy</span><strong>{{ game.inaccuracy_moves }}</strong>
+                                        </div>
+                                        {%
+                                        endif %}
+                                        {% if game.mistake_moves %}
+                                        <div class="move-quality-item">
+                                            <span>?
+                                                Mistake</span><strong>{{ game.mistake_moves }}</strong>
+                                        </div>
+                                        {% endif %}
+                                        {% if game.blunder_moves %}
+                                        <div class="move-quality-item">
+                                            <span>??
+                                                Blunder</span><strong>{{ game.blunder_moves }}</strong>
+                                        </div>
                                         {% endif %}
                                     </div>
                                 </div>
-                                <!-- Move Quality -->
-                                <div class="card compact-card">
-                                    <h3 style="margin-bottom: 1rem;">Move Quality</h3>
-                                    <div style="display: grid; grid-template-columns: 1fr; gap: 1rem;">
-                                        <!-- Player Stats -->
-                                        <div style="border-bottom: 1px solid var(--border-subtle);
-                                                    padding-bottom: 1rem">
-                                            <h4 class="text-muted"
-                                                style="margin-bottom: 0.5rem;
-                                                       font-size: 0.75rem;
-                                                       text-transform: uppercase">
-                                                You ({{ game.player_color|capitalize }})
-                                            </h4>
-                                            <div class="move-quality-grid">
-                                                {% if game.brilliant_moves %}
-                                                    <div class="move-quality-item">
-                                                        <span>!!
-                                                            Brilliant</span><strong>{{ game.brilliant_moves }}</strong>
-                                                        </div>
-                                                        {%
-                                                        endif %}
-                                                        {% if game.great_moves %}
-                                                            <div class="move-quality-item">
-                                                                <span>!
-                                                                    Great</span><strong>{{ game.great_moves }}</strong>
-                                                                </div>
-                                                            {% endif %}
-                                                            {% if game.best_moves %}
-                                                                <div class="move-quality-item">
-                                                                    <span>★
-                                                                        Best</span><strong>{{ game.best_moves }}</strong>
-                                                                    </div>
-                                                                {% endif %}
-                                                                {% if game.excellent_moves %}
-                                                                    <div class="move-quality-item">
-                                                                        <span>✓
-                                                                            Excellent</span><strong>{{ game.excellent_moves }}</strong>
-                                                                        </div>
-                                                                        {%
-                                                                        endif %}
-                                                                        {% if game.good_moves %}
-                                                                            <div class="move-quality-item">
-                                                                                <span>✓
-                                                                                    Good</span><strong>{{ game.good_moves }}</strong>
-                                                                                </div>
-                                                                            {% endif %}
-                                                                            {% if game.inaccuracy_moves %}
-                                                                                <div class="move-quality-item">
-                                                                                    <span>?!
-                                                                                        Inaccuracy</span><strong>{{ game.inaccuracy_moves }}</strong>
-                                                                                    </div>
-                                                                                    {%
-                                                                                    endif %}
-                                                                                    {% if game.mistake_moves %}
-                                                                                        <div class="move-quality-item">
-                                                                                            <span>?
-                                                                                                Mistake</span><strong>{{ game.mistake_moves }}</strong>
-                                                                                            </div>
-                                                                                        {% endif %}
-                                                                                        {% if game.blunder_moves %}
-                                                                                            <div class="move-quality-item">
-                                                                                                <span>??
-                                                                                                    Blunder</span><strong>{{ game.blunder_moves }}</strong>
-                                                                                                </div>
-                                                                                            {% endif %}
-                                                                                        </div>
-                                                                                    </div>
-                                                                                    <!-- Opponent Stats -->
-                                                                                    <div>
-                                                                                        <h4 class="text-muted"
-                                                                                            style="margin-bottom: 0.5rem;
+                                <!-- Opponent Stats -->
+                                <div>
+                                    <h4 class="text-muted"
+                                        style="margin-bottom: 0.5rem;
                                                                                                    font-size: 0.75rem;
                                                                                                    text-transform: uppercase">
-                                                                                            Opponent ({{ ('white' if game.player_color == 'black' else 'black')|capitalize
-                                                                                            }})
-                                                                                        </h4>
-                                                                                        <div class="move-quality-grid">
-                                                                                            {% if game.opponent_brilliant_moves %}
-                                                                                                <div class="move-quality-item">
-                                                                                                    <span>!!
-                                                                                                        Brilliant</span><strong>{{ game.opponent_brilliant_moves }}</strong>
-                                                                                                    </div>
-                                                                                                {% endif %}
-                                                                                                {% if game.opponent_great_moves %}
-                                                                                                    <div class="move-quality-item">
-                                                                                                        <span>!
-                                                                                                            Great</span><strong>{{ game.opponent_great_moves }}</strong>
-                                                                                                        </div>
-                                                                                                        {%
-                                                                                                        endif %}
-                                                                                                        {% if game.opponent_best_moves %}
-                                                                                                            <div class="move-quality-item">
-                                                                                                                <span>★
-                                                                                                                    Best</span><strong>{{ game.opponent_best_moves }}</strong>
-                                                                                                                </div>
-                                                                                                            {% endif
-                                                                                                            %}
-                                                                                                            {% if game.opponent_excellent_moves %}
-                                                                                                                <div class="move-quality-item">
-                                                                                                                    <span>✓
-                                                                                                                        Excellent</span><strong>{{ game.opponent_excellent_moves }}</strong>
-                                                                                                                    </div>
-                                                                                                                {% endif %}
-                                                                                                                {% if game.opponent_good_moves %}
-                                                                                                                    <div class="move-quality-item">
-                                                                                                                        <span>✓
-                                                                                                                            Good</span><strong>{{ game.opponent_good_moves }}</strong>
-                                                                                                                        </div>
-                                                                                                                    {% endif
-                                                                                                                    %}
-                                                                                                                    {% if game.opponent_inaccuracy_moves %}
-                                                                                                                        <div class="move-quality-item">
-                                                                                                                            <span>?!
-                                                                                                                                Inaccuracy</span><strong>{{ game.opponent_inaccuracy_moves }}</strong>
-                                                                                                                            </div>
-                                                                                                                        {% endif %}
-                                                                                                                        {% if game.opponent_mistake_moves %}
-                                                                                                                            <div class="move-quality-item">
-                                                                                                                                <span>?
-                                                                                                                                    Mistake</span><strong>{{ game.opponent_mistake_moves }}</strong>
-                                                                                                                                </div>
-                                                                                                                                {%
-                                                                                                                                endif %}
-                                                                                                                                {% if game.opponent_blunder_moves %}
-                                                                                                                                    <div class="move-quality-item">
-                                                                                                                                        <span>??
-                                                                                                                                            Blunder</span><strong>{{ game.opponent_blunder_moves }}</strong>
-                                                                                                                                        </div>
-                                                                                                                                        {%
-                                                                                                                                        endif %}
-                                                                                                                                    </div>
-                                                                                                                                </div>
-                                                                                                                            </div>
-                                                                                                                        </div>
-                                                                                                                    {% endif %}
-                                                                                                                </div>
-                                                                                                            </div>
-                                                                                                        </div>
-                                                                                                    </div>
-                                                                                                </main>
-                                                                                                <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-                                                                                                <script src="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.js"></script>
-                                                                                                <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
-                                                                                                <script>
+                                        Opponent ({{ ('white' if game.player_color == 'black' else 'black')|capitalize
+                                        }})
+                                    </h4>
+                                    <div class="move-quality-grid">
+                                        {% if game.opponent_brilliant_moves %}
+                                        <div class="move-quality-item">
+                                            <span>!!
+                                                Brilliant</span><strong>{{ game.opponent_brilliant_moves }}</strong>
+                                        </div>
+                                        {% endif %}
+                                        {% if game.opponent_great_moves %}
+                                        <div class="move-quality-item">
+                                            <span>!
+                                                Great</span><strong>{{ game.opponent_great_moves }}</strong>
+                                        </div>
+                                        {%
+                                        endif %}
+                                        {% if game.opponent_best_moves %}
+                                        <div class="move-quality-item">
+                                            <span>★
+                                                Best</span><strong>{{ game.opponent_best_moves }}</strong>
+                                        </div>
+                                        {% endif
+                                        %}
+                                        {% if game.opponent_excellent_moves %}
+                                        <div class="move-quality-item">
+                                            <span>✓
+                                                Excellent</span><strong>{{ game.opponent_excellent_moves }}</strong>
+                                        </div>
+                                        {% endif %}
+                                        {% if game.opponent_good_moves %}
+                                        <div class="move-quality-item">
+                                            <span>✓
+                                                Good</span><strong>{{ game.opponent_good_moves }}</strong>
+                                        </div>
+                                        {% endif
+                                        %}
+                                        {% if game.opponent_inaccuracy_moves %}
+                                        <div class="move-quality-item">
+                                            <span>?!
+                                                Inaccuracy</span><strong>{{ game.opponent_inaccuracy_moves }}</strong>
+                                        </div>
+                                        {% endif %}
+                                        {% if game.opponent_mistake_moves %}
+                                        <div class="move-quality-item">
+                                            <span>?
+                                                Mistake</span><strong>{{ game.opponent_mistake_moves }}</strong>
+                                        </div>
+                                        {%
+                                        endif %}
+                                        {% if game.opponent_blunder_moves %}
+                                        <div class="move-quality-item">
+                                            <span>??
+                                                Blunder</span><strong>{{ game.opponent_blunder_moves }}</strong>
+                                        </div>
+                                        {%
+                                        endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
+    <script>
         const pgnString = {{ pgn | tojson }};
         var positions = {{ positions | tojson | safe }};
         let board = null;
@@ -707,8 +703,7 @@
                 const response = await fetch('/api/analysis/active');
                 const data = await response.json();
                 const activeIds = new Set(data.active_game_ids || []);
-                const gameId = {{ game.id }
-            };
+                const gameId = {{ game.id }};
 
             if (activeIds.has(gameId)) {
                 const btn = document.getElementById('analyze-btn');
@@ -738,12 +733,13 @@
 
         // Initial check on load
         checkGlobalAnalysis();
-                                                                                                </script>
-                                                                                                <style>
+    </script>
+    <style>
         .badge-secondary {
             background: var(--bg-tertiary);
             color: var(--text-secondary);
         }
-                                                                                                </style>
-                                                                                            </body>
-                                                                                        </html>
+    </style>
+</body>
+
+</html>
