@@ -1,6 +1,5 @@
 """Stockfish chess engine integration."""
 import os
-from typing import Optional
 
 import chess
 import chess.engine
@@ -14,7 +13,7 @@ class StockfishAnalyzer:
 
     def __init__(
         self,
-        stockfish_path: Optional[str] = None,
+        stockfish_path: str | None = None,
         depth: int = 20,
         time_limit: float = 1.0,
     ):
@@ -73,22 +72,7 @@ class StockfishAnalyzer:
             raise RuntimeError("Engine not connected. Call connect() first.")
 
         # Try cache first
-        from src.analysis.cache import get_cache
 
-        fen = board.fen()
-        cache = get_cache()
-        cached = cache.get_evaluation(fen)
-
-        if cached is not None:
-            # Convert cached format to expected format
-            return {
-                "evaluation": cached.get("score", 0),
-                "best_move": cached.get("best_move"),
-                "mate_in": None,  # Not cached currently
-                "depth": cached.get("depth", 0),
-            }
-
-        # Cache miss - analyze with Stockfish
         try:
             info = self.engine.analyse(
                 board,
@@ -116,11 +100,6 @@ class StockfishAnalyzer:
                 "mate_in": mate_info,
                 "depth": info.get("depth", 0),
             }
-
-            # Cache for next time
-            cache.set_evaluation(
-                fen, {"score": cp_score, "best_move": result["best_move"], "depth": result["depth"]}
-            )
 
             return result
 

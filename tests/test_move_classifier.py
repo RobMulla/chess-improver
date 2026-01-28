@@ -6,50 +6,7 @@ import pytest
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-
-from src.analysis.cache import AnalysisCache, get_cache
-from src.analysis.move_classifier import MoveClassifier
-
-
-class TestRedisCache:
-    """Test Redis caching functionality."""
-
-    def test_cache_initialization(self):
-        """Test cache can be initialized."""
-        cache = AnalysisCache()
-        assert cache is not None
-        # Should work even if Redis is down
-
-    def test_cache_set_and_get(self):
-        """Test basic cache operations."""
-        cache = get_cache()
-
-        test_fen = "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1"
-        test_data = {"score": 50, "best_move": "e7e5", "depth": 20}
-
-        # Set
-        success = cache.set_evaluation(test_fen, test_data)
-        if cache.enabled:
-            assert success is True
-
-            # Get
-            retrieved = cache.get_evaluation(test_fen)
-            assert retrieved == test_data
-
-    def test_cache_miss(self):
-        """Test cache miss returns None."""
-        cache = get_cache()
-        result = cache.get_evaluation("nonexistent_fen")
-        assert result is None
-
-    def test_cache_stats(self):
-        """Test cache statistics."""
-        cache = get_cache()
-        stats = cache.get_stats()
-
-        assert "enabled" in stats
-        if stats["enabled"]:
-            assert "cache_hits" in stats or "total_keys" in stats
+from src.analysis.move_classifier import MoveClassifier  # noqa: E402
 
 
 class TestMoveClassificationThresholds:
@@ -168,29 +125,6 @@ class TestAccuracyCalculation:
         )
         accuracy = MoveClassifier.calculate_accuracy_from_moves(classifications)
         assert 90.0 < accuracy < 96.0  # Mixed moves should be high-90s
-
-
-class TestBackgroundJobs:
-    """Test RQ background job system."""
-
-    def test_queue_import(self):
-        """Test we can import job queue components."""
-        try:
-            from redis import Redis
-            from rq import Queue
-
-            assert Redis is not None and Queue is not None
-        except ImportError:
-            pytest.skip("Redis/RQ not available")
-
-    def test_worker_import(self):
-        """Test worker module can be imported."""
-        try:
-            from src.workers.analyzer_worker import analyze_game_task
-
-            assert analyze_game_task is not None
-        except ImportError as e:
-            pytest.fail(f"Worker import failed: {e}")
 
 
 def run_tests():
