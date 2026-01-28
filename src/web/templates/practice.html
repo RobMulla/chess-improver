@@ -30,50 +30,47 @@
                 <h3 style="margin-bottom: 1.5rem;">Select Practice Criteria</h3>
 
                 <div
-                    style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+                    style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
                     <div>
                         <label
-                            style="display: block; margin-bottom: 0.5rem; font-size: 0.875rem; color: var(--text-muted);">Playing
-                            As</label>
-                        <select id="filter-color" class="practice-select">
-                            <option value="both">Both Colors</option>
-                            <option value="white">White</option>
-                            <option value="black">Black</option>
-                        </select>
+                            style="display: block; margin-bottom: 0.75rem; font-size: 0.875rem; color: var(--text-muted); font-weight: 600;">PLAYING
+                            AS</label>
+                        <div id="filter-color" class="selector-group">
+                            <div class="selector-item active" data-value="both">Both</div>
+                            <div class="selector-item" data-value="white">White</div>
+                            <div class="selector-item" data-value="black">Black</div>
+                        </div>
                     </div>
 
                     <div>
                         <label
-                            style="display: block; margin-bottom: 0.5rem; font-size: 0.875rem; color: var(--text-muted);">Mistake
-                            Type</label>
-                        <select id="filter-mistake" class="practice-select">
-                            <option value="both">All Mistakes</option>
-                            <option value="mistake">Mistakes Only</option>
-                            <option value="blunder">Blunders Only</option>
-                        </select>
+                            style="display: block; margin-bottom: 0.75rem; font-size: 0.875rem; color: var(--text-muted); font-weight: 600;">MISTAKE
+                            TYPE</label>
+                        <div id="filter-mistake" class="selector-group" data-multi="true">
+                            <div class="selector-item active" data-value="mistake">Mistakes</div>
+                            <div class="selector-item active" data-value="blunder">Blunders</div>
+                        </div>
                     </div>
 
                     <div>
                         <label
-                            style="display: block; margin-bottom: 0.5rem; font-size: 0.875rem; color: var(--text-muted);">Game
-                            Phase</label>
-                        <select id="filter-phase" class="practice-select">
-                            <option value="all">All Phases</option>
-                            <option value="opening">Opening</option>
-                            <option value="middlegame">Middlegame</option>
-                            <option value="endgame">Endgame</option>
-                        </select>
+                            style="display: block; margin-bottom: 0.75rem; font-size: 0.875rem; color: var(--text-muted); font-weight: 600;">GAME
+                            PHASE</label>
+                        <div id="filter-phase" class="selector-group" data-multi="true">
+                            <div class="selector-item active" data-value="opening">Opening</div>
+                            <div class="selector-item active" data-value="middlegame">Middlegame</div>
+                            <div class="selector-item active" data-value="endgame">Endgame</div>
+                        </div>
                     </div>
 
                     <div>
                         <label
-                            style="display: block; margin-bottom: 0.5rem; font-size: 0.875rem; color: var(--text-muted);">Number
-                            of Positions</label>
-                        <select id="filter-limit" class="practice-select">
-                            <option value="10">10 positions</option>
-                            <option value="20" selected>20 positions</option>
-                            <option value="50">50 positions</option>
-                        </select>
+                            style="display: block; margin-bottom: 0.75rem; font-size: 0.875rem; color: var(--text-muted); font-weight: 600;">POSITIONS</label>
+                        <div id="filter-limit" class="selector-group">
+                            <div class="selector-item" data-value="10">10</div>
+                            <div class="selector-item active" data-value="20">20</div>
+                            <div class="selector-item" data-value="50">50</div>
+                        </div>
                     </div>
                 </div>
 
@@ -83,6 +80,18 @@
                         <span id="start-loading" style="display: none;">⏳ Loading...</span>
                     </button>
                     <span id="positions-count" style="color: var(--text-muted);"></span>
+                </div>
+            </div>
+
+            <!-- Recent Sessions Section -->
+            <div id="recent-sessions-card" class="card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                    <h3 style="margin-bottom: 0;">Recent Practice Results</h3>
+                    <a href="/practice-history"
+                        style="font-size: 0.875rem; color: var(--accent-primary); text-decoration: none;">View All →</a>
+                </div>
+                <div id="recent-sessions-container">
+                    <p style="text-align: center; color: var(--text-dim); padding: 2rem;">Loading recent results...</p>
                 </div>
             </div>
 
@@ -214,6 +223,77 @@
         let historyFens = [];
         let currentHistoryIndex = 0;
 
+        document.addEventListener('DOMContentLoaded', () => {
+            // Handle Toggle Selectors
+            $('.selector-item').on('click', function () {
+                const group = $(this).closest('.selector-group');
+                const isMulti = group.data('multi') === true;
+
+                if (isMulti) {
+                    // Multi-select: toggle active class, ensuring at least one remains active
+                    if ($(this).hasClass('active')) {
+                        if (group.find('.active').length > 1) {
+                            $(this).removeClass('active');
+                        }
+                    } else {
+                        $(this).addClass('active');
+                    }
+                } else {
+                    // Single-select: activate clicked, deactivate others in group
+                    group.find('.selector-item').removeClass('active');
+                    $(this).addClass('active');
+                }
+            });
+
+            fetchRecentSessions();
+        });
+
+        async function fetchRecentSessions() {
+            try {
+                const response = await fetch('/api/practice/sessions');
+                const data = await response.json();
+                const container = document.getElementById('recent-sessions-container');
+
+                if (data.sessions && data.sessions.length > 0) {
+                    let html = `
+                        <table class="mini-session-table">
+                            <thead>
+                                <tr>
+                                    <th>DATE</th>
+                                    <th>SCORE</th>
+                                    <th>ACCURACY</th>
+                                    <th>SETTINGS</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                    `;
+
+                    // Show last 5 sessions
+                    data.sessions.slice(0, 5).forEach(s => {
+                        const date = new Date(s.date).toLocaleDateString();
+                        const settings = s.settings || {};
+                        const settingsStr = `${settings.color || 'both'} | ${Array.isArray(settings.mistake_type) ? settings.mistake_type.join(',') : settings.mistake_type} | ${Array.isArray(settings.phase) ? settings.phase.join(',') : settings.phase}`;
+
+                        html += `
+                            <tr>
+                                <td>${date}</td>
+                                <td><strong>${s.score}/${s.total}</strong></td>
+                                <td><span class="badge ${s.accuracy > 70 ? 'badge-success' : 'badge-info'}">${s.accuracy}%</span></td>
+                                <td style="color: var(--text-muted); font-size: 0.75rem;">${settingsStr}</td>
+                            </tr>
+                        `;
+                    });
+
+                    html += '</tbody></table>';
+                    container.innerHTML = html;
+                } else {
+                    container.innerHTML = '<p style="text-align: center; color: var(--text-dim); padding: 2rem;">No practice history found yet.</p>';
+                }
+            } catch (e) {
+                console.error('Error fetching sessions:', e);
+            }
+        }
+
         async function startPractice() {
             const startBtn = document.getElementById('start-btn');
             const startText = document.getElementById('start-text');
@@ -223,11 +303,17 @@
             startText.style.display = 'none';
             startLoading.style.display = 'inline';
 
+            const getSelectedValues = (id) => {
+                return Array.from(document.querySelectorAll(`#${id} .selector-item.active`))
+                    .map(el => el.dataset.value)
+                    .join(',');
+            };
+
             const filters = {
-                color: document.getElementById('filter-color').value,
-                mistake_type: document.getElementById('filter-mistake').value,
-                phase: document.getElementById('filter-phase').value,
-                limit: document.getElementById('filter-limit').value
+                color: getSelectedValues('filter-color'),
+                mistake_type: getSelectedValues('filter-mistake'),
+                phase: getSelectedValues('filter-phase'),
+                limit: getSelectedValues('filter-limit')
             };
 
             const params = new URLSearchParams(filters);
@@ -241,6 +327,7 @@
                 score = { correct: 0, total: 0 };
 
                 document.getElementById('setup-panel').style.display = 'none';
+                document.getElementById('recent-sessions-card').style.display = 'none';
                 document.getElementById('practice-panel').style.display = 'block';
 
                 loadPosition();

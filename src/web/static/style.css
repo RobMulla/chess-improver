@@ -860,3 +860,55 @@ tr:hover {
     max-width: 300px; /* Limit width */
     overflow: hidden;
 }
+
+/* Toggle Selectors */
+.selector-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.selector-item {
+    padding: 0.5rem 1rem;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-subtle);
+    border-radius: 6px;
+    color: var(--text-muted);
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    user-select: none;
+}
+
+.selector-item:hover {
+    border-color: var(--accent-primary);
+    color: var(--text-primary);
+}
+
+.selector-item.active {
+    background: var(--accent-primary);
+    color: white;
+    border-color: var(--accent-primary);
+}
+
+/* Mini Session Table */
+.mini-session-table {
+    width: 100%;
+    font-size: 0.875rem;
+}
+
+.mini-session-table th {
+    font-size: 0.75rem;
+    padding: 0.5rem;
+    color: var(--text-dim);
+}
+
+.mini-session-table td {
+    padding: 0.75rem 0.5rem;
+    border-top: 1px solid var(--border-subtle);
+}
+
+.mini-session-table tr:hover {
+    background: var(--bg-hover);
+}

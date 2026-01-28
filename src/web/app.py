@@ -471,15 +471,15 @@ def api_practice_positions():
     from src.database.models import Game, Position, PracticeSession
 
     color = request.args.get("color", "both")
-    mistake_type = request.args.get("mistake_type", "both")
-    phase = request.args.get("phase", "all")
+    mistake_types = request.args.get("mistake_type", "both").split(",")
+    phases = request.args.get("phase", "all").split(",")
     limit = int(request.args.get("limit", 20))
 
     session = get_session()
 
     # Create Session Record
     new_session = PracticeSession(
-        settings={"color": color, "mistake_type": mistake_type, "phase": phase},
+        settings={"color": color, "mistake_type": mistake_types, "phase": phases},
         total_positions=0,  # Will update later or after fetch
     )
     session.add(new_session)
@@ -488,19 +488,26 @@ def api_practice_positions():
     query = session.query(Position).join(Game).options(joinedload(Position.game))
 
     # Mistake Type Filter
-    if mistake_type == "blunder":
-        query = query.filter(Position.is_blunder.is_(True))
-    elif mistake_type == "mistake":
-        query = query.filter(Position.is_mistake.is_(True))
-    else:
-        # Both (Mistake OR Blunder)
-        from sqlalchemy import or_
+    from sqlalchemy import or_
 
+    filters = []
+    if "blunder" in mistake_types:
+        filters.append(Position.is_blunder.is_(True))
+    if "mistake" in mistake_types:
+        filters.append(Position.is_mistake.is_(True))
+
+    if filters:
+        query = query.filter(or_(*filters))
+    elif "both" not in mistake_types:
+        # Fallback if somehow nothing is selected
+        query = query.filter(or_(Position.is_mistake.is_(True), Position.is_blunder.is_(True)))
+    else:
+        # Both (Default)
         query = query.filter(or_(Position.is_mistake.is_(True), Position.is_blunder.is_(True)))
 
     # Phase Filter
-    if phase != "all":
-        query = query.filter(Position.game_phase == phase)
+    if "all" not in phases:
+        query = query.filter(Position.game_phase.in_(phases))
 
     # Color Filter
     if color != "both":
