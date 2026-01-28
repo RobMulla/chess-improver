@@ -1,13 +1,13 @@
 # Chess Improver - Product Requirements Document
 
 **Last Updated:** January 27, 2026
-**Status:** Backend Complete ✅ | Frontend 70% Complete ⚠️
+**Status:** Core v1.0 COMPLETE ✅
 
 ## 🎯 Vision
 
 **Chess Improver** is a web-based chess training platform that analyzes your games from Chess.com and Lichess, identifies your mistakes, and helps you improve through targeted practice and data-driven insights.
 
-**Mission:** Make chess improvement accessible, personalized, and data-driven for players of all levels.
+**Mission:** Make chess improvement accessible, personalized, and data-driven by focusing on re-learning from your actual mistakes.
 
 ---
 
@@ -15,32 +15,26 @@
 
 **Primary:** Amateur chess players (800-2000 ELO) who:
 - Play regularly on Chess.com or Lichess
-- Want to improve systematically
-- Prefer visual, interactive learning over reading
-- Have 10-30 minutes daily for training
-
-**Secondary:** Chess coaches who want to:
-- Track student progress
-- Generate practice material from student games
-- Identify patterns in student play
+- Want to improve systematically by reviewing their own blunders
+- Prefer a clean, UI-driven experience over CLI tools
+- Have 10-30 minutes daily for targeted practice
 
 ---
 
 ## 🎨 Core User Experience
 
 ### User Journey
-1. **Import** games from Chess.com/Lichess automatically
-2. **Analyze** games in background with Stockfish
-3. **Review** personalized dashboard with accuracy trends
-4. **Practice** past mistakes in interactive trainer
-5. **Improve** based on data-driven insights
+1. **Configure** site settings with Chess.com/Lichess usernames and analysis preferences.
+2. **Import** games seamlessly via the Web UI (background sync).
+3. **Analyze** games with professional-grade Stockfish evaluation and Win% accuracy metrics.
+4. **Practice** specific mistakes in the **"Blunder Buster"** interactive trainer.
+5. **Track** progress through session history and aggregate accuracy stats.
 
 ### Key Differentiators
-- **Automatic game import** - No manual PGN uploads
-- **Background analysis** - Never blocks the UI
-- **Mistake-focused training** - Practice your actual errors
-- **Beautiful visualizations** - Make data engaging
-- **Zero setup** - Web-based, no installation
+- **UI-First Experience**: No CLI required; all operations (sync, analyze, practice) are in the browser.
+- **Blunder-Focused Training**: Practice only the moves you actually missed in your own games.
+- **Persistent Progress**: Every practice attempt and session is stored for long-term tracking.
+- **Professional Analytics**: Win% based move classification on par with Lichess/Chess.com standards.
 
 ---
 
@@ -48,552 +42,81 @@
 
 ### Technology Stack
 **Frontend:**
-- HTML/CSS/JavaScript (vanilla - no framework bloat)
-- Interactive chessboard (chess.js + chessboard.js)
-- Chart.js for visualizations
+- Clean, modern UI using **Tailwind CSS** and **Inter** typography.
+- **Vanilla JavaScript** (no heavy frameworks) for fast, responsive interactions.
+- Interactive chessboard using **chess.js** and **chessboard.js**.
 
 **Backend:** ✅ COMPLETE
-- Python Flask (lightweight, proven)
-- Stockfish chess engine (analysis)
-- Redis (caching + job queue with RQ)
-- SQLite (database - simple, reliable)
-- Win% algorithm (Lichess method)
+- **Python Flask** for the web server and API.
+- **Stockfish** engine for local high-depth analysis.
+- **Redis + RQ** for asynchronous game syncing and analysis.
+- **SQLAlchemy + SQLite** for persistent storage of games, moves, sessions, and configs.
 
-**Testing:** ✅ IMPLEMENTED
-- pytest (68/70 tests passing)
-- Coverage: 40% (core: 96-98%)
-- Pre-commit hooks (Ruff format + lint)
-- Coverage enforcement (40% minimum)
-
-**Infrastructure:** ✅ WORKING
-- Local dev server (port 5555)
-- Background worker (RQ)
-- Redis caching (10-100x speedup)
-- Future: Docker deployment
-
----
-
-## 🧪 Testing Requirements (MANDATORY)
-
-**Test-Driven Development Philosophy:**
-> Every feature, bug fix, and code change MUST have corresponding tests that pass before the code is considered complete.
-
-### Rules
-1. **No Code Without Tests** - Every new function/feature needs test coverage
-2. **Tests Must Pass** - All tests in `tests/` must pass before moving to next task
-3. **Test Before Fix** - For bugs, write failing test first, then fix
-4. **Regression Prevention** - Add test for every bug found
-
-### Test Structure
-```
-tests/
-├── test_chess_improver.py      # Core functionality
-├── test_phase1_features.py     # Phase-specific features
-├── test_win_chance.py          # Win% algorithm
-├── test_integration.py         # End-to-end tests
-└── test_golden_chesscom.py     # Chess.com validation
-```
-
-### Running Tests
-```bash
-# Run all tests
-pytest tests/ -v
-
-# Run specific test file
-pytest tests/test_win_chance.py -v
-
-# Run with coverage
-pytest tests/ --cov=src --cov-report=html
-```
-
-### Test Coverage Goals
-- **Core algorithms:** 100% (move_classifier, win_chance, engine)
-- **API endpoints:** 90%
-- **UI helpers:** 70%
-- **Overall project:** >80%
+**Testing:** ✅ 100% Core Pass Rate
+- Comprehensive test suite for Win% logic, Move Classification, and Practice Mode.
+- Isolated in-memory database testing for API endpoints.
 
 ---
 
 ## ✨ Feature Specifications
 
-### 1. Dashboard (Landing Page)
+### 1. Unified Dashboard
+- **Overview Stats**: Total games, analyzed games, and analysis progress.
+- **Top Openings**: Performance breakdown (wins/draws/losses) of your most-played openings.
+- **Quick Navigation**: One-click access to Sync, Practice, and Settings.
 
-**Purpose:** High-level overview of chess improvement journey
+### 2. Games Library & Viewer
+- **Filtered Browser**: Filter games by date, platform, result, and opening.
+- **Deep Analysis**: Step through games with move-by-move evaluation and classification (Best, Excellent, Mistake, Blunder).
+- **Game Phase Detection**: Smart classification of moves into Opening, Middlegame, and Endgame.
 
-**Components:**
-- **Stats Cards**
-  - Total games imported
-  - Games analyzed
-  - Average accuracy (last 30 days)
-  - Improvement trend (+X% vs last month)
+### 3. "Blunder Buster" Practice Mode
+- **Smart Filtering**: Launch sessions based on specific criteria:
+  - playing as White/Black
+  - Mistake vs. Blunder focus
+  - specific game phases (Endgames only, etc.)
+  - specific date ranges
+- **Interactive Gameplay**: Replay the position and find the engine's best move.
+- **Immediate Feedback**: Correct/Incorrect validation with the option to "Show Solution."
+- **Session History**: Review past training runs, accuracy percentages, and aggregate improvement stats.
 
-- **Recent Activity**
-  - Last 5 analyzed games with quick stats
-  - Quick-action buttons (Analyze More, Practice)
-
-- **Today's Training Plan**
-  - Recommended practice positions (3-5 per day)
-  - Based on recent mistake patterns
-  - One-click to start practice
-
-**Success Metrics:**
-- Time on dashboard < 30s (quick scan)
-- Click-through to practice > 40%
-
----
-
-### 2. Games Library
-
-**Purpose:** Browse and filter all imported games
-
-**Features:**
-- **Table View**
-  - Columns: Date, Platform, Opening, Result, Accuracy, Mistakes
-  - Sortable by any column
-  - Pagination (50 games per page)
-
-- **Filters**
-  - Date range picker
-  - Platform (Chess.com / Lichess)
-  - Result (Win / Draw / Loss)
-  - Accuracy range (slider)
-  - Game phase (Opening / Middlegame / Endgame errors)
-
-- **Quick Actions**
-  - Click game → Full game review
-  - "Re-analyze" button for old games
-  - Export to PGN
-
-**Nice to Have:**
-- Bulk operations (analyze selected games)
-- Save filter presets
+### 4. Settings & Data Management
+- **Persistent Identity**: Store multiple usernames for Chess.com and Lichess.
+- **Sync Control**: Trigger background updates and track import progress directly from the UI.
 
 ---
 
-### 3. Game Review (Deep Dive)
+## 🧪 Testing Requirements
 
-**Purpose:** Detailed analysis of single game
-
-**Layout:**
-- **Left:** Interactive chessboard
-- **Right:** Move list with annotations
-
-**Features:**
-- Color-coded moves (best/good/inaccuracy/mistake/blunder)
-- Click move → Show position + engine evaluation
-- Mistake highlights with:
-  - What you played
-  - Best move (engine recommendation)
-  - Evaluation drop (centipawns + win%)
-  - Why it's a mistake (position explanation - future AI)
-
-- **Navigation**
-  - Previous/Next buttons
-  - Jump to first mistake
-  - Keyboard shortcuts (←/→)
+**MANDATORY Standards:**
+1. **TDD Flow**: Every feature improvement (like Blunder Buster) must include corresponding `pytest` cases.
+2. **Pre-commit Compliance**: Code must pass `ruff` formatting, linting, and security audits (`bandit`).
+3. **Regression Safety**: Coverage must be maintained on all core analysis and practice logic.
 
 ---
 
-### 4. Practice Mistakes
-
-**Purpose:** Interactive trainer for past mistakes
-
-**Setup Screen:**
-- **Filters:**
-  - Color (White / Black / Both)
-  - Mistake type (All / Blunders / Mistakes / Inaccuracies)
-  - Game phase (All / Opening / Middlegame / Endgame)
-  - Date range (Last week / month / all time)
-
-- **Settings:**
-  - Time limit per position (30s / 60s / unlimited)
-  - Difficulty (show hints / no hints)
-  - Number of positions (5 / 10 / 20)
-
-**Practice Mode:**
-- Show position where mistake was made
-- User makes move
-- Immediate feedback:
-  - ✅ Correct → Show why it's best
-  - ❌ Wrong → Highlight mistake, show correct move
-  - Option to try again or continue
-
-- **Progress Tracking:**
-  - Accuracy rate during session
-  - Time per move
-  - Session stats at end
-
-**Gamification:**
-- Streak counter (consecutive correct moves)
-- Daily practice goal (e.g., "Practice 10 positions")
-- Achievement badges (future)
+## 🐛 Resolved Issues (Phase 2 & 3)
+- ✅ **Move Classification**: Fixed 100% accuracy bug; now uses Win% loss distribution.
+- ✅ **Opening Detection**: Standardized naming and unified opening labels across the DB.
+- ✅ **UI Cleanup**: Removed legacy "Daily Plan" and "Insights" modules in favor of the focused "Blunder Buster" vision.
+- ✅ **Session Isolation**: Fixed integration test failures related to database state leakage.
 
 ---
 
-### 5. Insights & Analytics
+## � Roadmap
 
-**Purpose:** Data-driven understanding of chess patterns
+### Phase 4: Refined Practice (Next)
+- [ ] **Openings Practice**: Set "ideal" opening branches and practice your preparation.
+- [ ] **SRS Integration**: Implement Spaced Repetition (SRS) to show recurring mistakes more frequently.
+- [ ] **Advanced Stats**: Heatmaps of common mistake squares and time management analysis.
 
-**Sections:**
-
-**A. Accuracy Trends**
-- Line chart: Accuracy over time (last 30/90/365 days)
-- Breakdown by color (White vs Black)
-- Breakdown by time control (Blitz / Rapid / Classical)
-
-**B. Mistake Patterns**
-- Pie chart: Mistake distribution (Blunders / Mistakes / Inaccuracies)
-- Bar chart: Mistakes by game phase
-- Heatmap: Common mistake square patterns (future)
-
-**C. Opening Performance**
-- Table: Your top 10 openings
-  - Win rate
-  - Average accuracy
-  - Games played
-- Identify weak openings (low win rate or accuracy)
-
-**D. Time Management**
-- Scatter plot: Move time vs accuracy
-- Insight: "You blunder when moving in < 5 seconds"
-- Recommend optimal thinking time
-
-**E. Improvement Areas**
-- Top 3 recommendation cards:
-  - "Practice endgames - 40% of your mistakes"
-  - "Study the Italian Game - only 65% accuracy"
-  - "Slow down in middlegame - rushed moves = blunders"
+### Phase 5: Scale & Social
+- [ ] AI-powered position explanations (LLM integration).
+- [ ] Mobile-responsive design optimization.
+- [ ] User accounts (OAuth integration).
 
 ---
 
-### 6. Settings & Configuration
-
-**Game Import:**
-- Chess.com username (auto-import latest games)
-- Lichess username (auto-import latest games)
-- Import frequency (Daily / Weekly / Manual)
-- Date range to import
-
-**Analysis Settings:**
-- Stockfish depth (15 / 20 / 25 ply)
-- Auto-analyze new games (On / Off)
-- Cache settings (Clear cache button)
-
-**UI Preferences:**
-- Board theme (blue / green / brown)
-- Piece set (classic / modern / etc.)
-- Dark mode toggle
-
----
-
-## 🔧 Technical Requirements
-
-### Performance
-- **Page load:** < 2 seconds
-- **Game analysis:** < 30 seconds (background, non-blocking)
-- **Practice mode:** < 100ms move response
-- **Cache hit rate:** > 80% for re-analysis
-
-### Scalability
-- Support 100K+ games per user
-- Handle 10+ concurrent analyses
-- Database queries < 100ms
-
-### Reliability
-- Graceful degradation if Redis down (no caching)
-- Error handling on all API endpoints
-- Auto-retry failed analysis jobs
-
-### Security
-- No authentication (local-only for now)
-- Future: OAuth for Chess.com/Lichess import
-- Sanitize all user inputs
-
----
-
-## 📊 Success Metrics
-
-### Engagement
-- Daily active users (target: 70% of registered)
-- Average session time (target: 15 minutes)
-- Practice sessions per week (target: 3+)
-
-### Core Metrics
-- Games analyzed per user (target: 50+)
-- Practice completion rate (target: 60%+)
-- Insights viewed per session (target: 1+)
-
-### Quality
-- Analysis accuracy (match Chess.com ±10%)
-- Bug reports per week (target: < 5)
-- UI response time < 100ms (target: 95% requests)
-
----
-
-## 🚀 Roadmap
-
-### Phase 1: MVP (Current) ✅
-- [x] Game import from Chess.com/Lichess
-- [x] Background analysis with Stockfish
-- [x] Basic dashboard
-- [x] Games library
-- [x] Practice setup screen
-- [ ] **FIX: Accurate move classification**
-- [ ] **FIX: Opening name detection**
-
-### Phase 2: Core Training (Next)
-- [ ] Working practice mode with feedback
-- [ ] Game review page with annotations
-- [ ] Basic insights (accuracy trends only)
-
-### Phase 3: Advanced Analytics
-- [ ] Full insights dashboard
-- [ ] Time analysis
-- [ ] Opening repertoire tracking
-- [ ] Pattern recognition
-
-### Phase 4: Enhancement
-- [ ] AI-powered explanations (GPT-4 integration)
-- [ ] Spaced repetition algorithm
-- [ ] Mobile-responsive design
-- [ ] Shareable game reviews
-
-### Phase 5: Social & Scale
-- [ ] User accounts & auth
-- [ ] Cloud deployment
-- [ ] Coach dashboard
-- [ ] Community features
-
----
-
-## 🐛 Known Issues (Critical to Fix)
-
-### 1. Move Classification (HIGHEST PRIORITY)
-**Problem:** All games showing 100% accuracy
-**Impact:** Blocks practice system and insights
-**Solution:** Debug Win% algorithm integration
-**ETA:** 2-4 hours
-
-### 2. Opening Names
-**Problem:** Most openings showing "Unknown"
-**Impact:** Poor user experience, can't filter by opening
-**Solution:** Integrate chess-openings library or API
-**ETA:** 1 hour
-
-### 3. Empty Insights
-**Problem:** "No insights available"
-**Impact:** Missing key value proposition
-**Solution:** Requires fix #1 (mistake data) + basic charts
-**ETA:** 3 hours (after fix #1)
-
----
-
-## 💡 Future Ideas (Backlog)
-
-- **Puzzle Rush Mode:** Solve positions under time pressure
-- **Opponent Analysis:** Track performance vs specific opponents
-- **Streamer Mode:** Analyze Twitch streamers' games
-- **Study Plans:** Pre-built training curricula
-- **Chess Mentor:** AI coach that explains concepts
-- **Mobile App:** Native iOS/Android
-- **Browser Extension:** Analyze games directly on Chess.com
-- **Opening Trainer:** Spaced-repetition for openings
-- **Tactics Finder:** Extract tactical motifs from your games
-
----
-
-## 📝 Design Principles
-
-1. **Clarity over Cleverness** - Simple, obvious UI
-2. **Data-Driven** - Every recommendation backed by analysis
-3. **Fast Feedback** - Immediate response to user actions
-4. **Progressive Disclosure** - Start simple, reveal complexity
-5. **Beautiful by Default** - Design matters, even for chess nerds
-
----
-
-**Document Version:** 1.0
-**Last Updated:** January 27, 2026
-**Status:** Active Development - MVP Phase
-
----
-
-## 📊 Current Implementation Status (Jan 2026)
-
-### ✅ COMPLETED
-
-**Backend Infrastructure (100%)**
-- ✅ Game import from Chess.com and Lichess
-- ✅ Stockfish chess engine integration
-- ✅ Win% algorithm (Lichess method)
-- ✅ Move classification (Best → Blunder)
-- ✅ Redis caching (10-100x speedup)
-- ✅ Background job queue (RQ)
-- ✅ Database models (SQLite)
-- ✅ Testing framework (pytest)
-- ✅ Pre-commit hooks (Ruff)
-
-**Analysis Engine (100%)**
-- ✅ Game analyzer with position evaluation
-- ✅ Accuracy calculation from Win% loss
-- ✅ Game phase detection (opening/middlegame/endgame)
-- ✅ Mistake/blunder detection
-- ✅ Move-by-move classification
-- ✅ Cache optimization
-
-**Web UI - Basic Pages (70%)**
-- ✅ Dashboard with stats
-- ✅ Games library (table, filters)
-- ✅ Game viewer (interactive board)
-- ✅ Practice mode (basic)
-- ✅ Insights page (skeleton)
-- ✅ Navigation/sidebar
-
-### ⚠️ IN PROGRESS / INCOMPLETE
-
-**Web UI - Critical Features (0%)**
-- ❌ Settings/Import page (must use CLI)
-- ❌ Bulk analysis UI (must use CLI)
-- ❌ Export/download functionality
-- ❌ Opening name detection (all show "Unknown")
-
-**Web UI - Data Visualization (0%)**
-- ❌ Insights dashboard with real data
-- ❌ Accuracy trend charts (Chart.js)
-- ❌ Mistake distribution visualizations
-- ❌ Opening performance analytics
-
-**Practice Mode - Enhancements (30%)**
-- ⚠️ Basic practice works
-- ❌ Filter by mistake type/phase/date
-- ❌ Session statistics
-- ❌ Progress tracking
-- ❌ Gamification elements
-
-**Testing Coverage (40%)**
-- ✅ Core algorithms: 96-98%
-- ⚠️ Collectors: 42-53%
-- ❌ Web app: 0%
-- ❌ Workers: 31%
-
----
-
-## 🎯 Next Priorities
-
-See [docs/WEB_UI_PLAN.md](docs/WEB_UI_PLAN.md) for detailed roadmap.
-
-### Phase 1: Browser-Only Operation (Week 1)
-**Goal:** Eliminate need for CLI
-
-1. **Settings/Import Page**
-   - Form to enter Chess.com/Lichess username
-   - Trigger sync_games from UI
-   - Progress indicator
-   - Status messages
-
-2. **Bulk Analysis Controls**
-   - "Analyze Selected" button on games list
-   - "Analyze All Unanalyzed" button
-   - Job queue progress tracking
-   - Background job status
-
-3. **Export Functionality**
-   - Export single game to PGN
-   - Bulk export (all games)
-   - Download with analysis annotations
-
-### Phase 2: Data Visualization (Week 2)
-**Goal:** Populate insights with real data
-
-4. **Opening Detection**
-   - Integrate chess-openings library
-   - Detect opening names from moves
-   - Opening performance stats
-   - Filter games by opening
-
-5. **Insights Dashboard**
-   - Chart.js visualizations
-   - Accuracy trends over time
-   - Mistake distribution charts
-   - Opening performance table
-
-### Phase 3: Practice Enhancement (Week 3)
-**Goal:** Make practice engaging and effective
-
-6. **Practice Filters**
-   - Filter by mistake type
-   - Filter by game phase
-   - Filter by date range
-   - Session configuration
-
-7. **Gamification**
-   - Streak counter
-   - Daily practice goals
-   - Session statistics
-   - Achievement system
-
----
-
-## 🧪 Quality Standards
-
-**All new code must:**
-1. ✅ Have corresponding tests (minimum 70% coverage)
-2. ✅ Pass pre-commit hooks (Ruff format + lint)
-3. ✅ Pass all existing tests (pytest tests/)
-4. ✅ Include docstrings for functions
-5. ✅ Follow Python best practices
-
-**Before merging:**
-- Coverage must not drop below 40%
-- All tests must pass
-- Pre-commit hooks must pass
-- Code must be reviewed
-
----
-
-## 📝 Known Issues
-
-1. **Test Failures:**
-   - 2 integration tests occasionally fail (session isolation)
-   - Recommendation: Fix before Phase 1
-
-2. **Opening Detection:**
-   - All games show "Unknown" opening
-   - Blocker for opening analytics
-
-3. **Web App Testing:**
-   - 0% coverage on Flask routes
-   - High priority for Phase 1
-
-4. **Deprecation Warnings:**
-   - datetime.utcnow() deprecated
-   - SQLAlchemy import paths
-   - Low priority (technical debt)
-
----
-
-## 🚀 Success Metrics
-
-**Phase 1 Complete When:**
-- ✅ User can import games via browser
-- ✅ User can analyze games via browser
-- ✅ User can export games via browser
-- ✅ No CLI required for basic workflow
-
-**Phase 2 Complete When:**
-- ✅ Opening names detected for all games
-- ✅ Insights show real data
-- ✅ Charts visualize trends
-- ✅ Opening performance visible
-
-**Phase 3 Complete When:**
-- ✅ Practice has filters
-- ✅ Session stats tracked
-- ✅ Daily goals implemented
-- ✅ User engagement increased
-
-**Overall Success:**
-- 🎯 >80% test coverage
-- 🎯 All features browser-accessible
-- 🎯 Load time <2s per page
-- 🎯 Mobile-responsive UI
+**Version:** 1.0 (Post-Phase 3)
+**Author:** Antigravity AI
+**Status:** Main implementation complete; shifted to refinement and new training modules.

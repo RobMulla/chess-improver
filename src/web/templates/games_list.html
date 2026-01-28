@@ -1,337 +1,194 @@
-<!DOCTYPE html>
-<html lang="en">
+{% extends "base.html" %}
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Games - Chess Improver</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-</head>
+{% block title %}Games - Chess Improver{% endblock %}
 
-<body>
-    <aside class="sidebar">
-        <div class="sidebar-brand">
-            <h1><span class="icon">♟️</span> Chess Improver</h1>
+{% block sub_header %}
+<header class="content-header">
+    <div class="header-flex">
+        <div>
+            <h1>Games Library</h1>
+            <p>Select and analyze your imported games</p>
         </div>
+        <div class="header-actions">
+            <button type="button" id="analyze-selected-btn" onclick="analyzeSelected()" class="btn btn-primary"
+                disabled>
+                <i class="fas fa-microchip" style="margin-right:0.5rem;"></i>
+                Analyze Selected
+            </button>
+        </div>
+    </div>
+</header>
+{% endblock %}
 
-        <nav class="sidebar-nav">
-            <div class="nav-section">
-                <div class="nav-section-title">Overview</div>
-                <a href="/" class="nav-link">
-                    <span class="nav-icon">📊</span>
-                    Dashboard
-                </a>
-                <a href="/plan" class="nav-link">
-                    <span class="nav-icon">📋</span>
-                    Daily Plan
-                </a>
-            </div>
+{% block content %}
+<div class="card" style="padding: 0; overflow: hidden;">
+    <div class="card-header"
+        style="padding: var(--spacing-lg); border-bottom: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center;">
+        <span id="selection-count" style="font-size: 0.875rem; color: var(--text-muted);">0 games selected</span>
+        <div style="font-size: 0.875rem; color: var(--text-muted);">
+            Total: <strong>{{ total_games }}</strong> games
+        </div>
+    </div>
 
-            <div class="nav-section">
-                <div class="nav-section-title">Analysis</div>
-                <a href="/games" class="nav-link active">
-                    <span class="nav-icon">🎮</span>
-                    Games
-                    <span class="nav-badge">{{ total_games }}</span>
-                </a>
-                <a href="/openings" class="nav-link">
-                    <span class="nav-icon">📖</span>
-                    Openings
-                </a>
-                <a href="/insights" class="nav-link">
-                    <span class="nav-icon">💡</span>
-                    Insights
-                </a>
-            </div>
-
-            <div class="nav-section">
-                <div class="nav-section-title">Training</div>
-                <a href="/practice" class="nav-link">
-                    <span class="nav-icon">🎯</span>
-                    Practice Mistakes
-                </a>
-                <a href="/repertoire" class="nav-link">
-                    <span class="nav-icon">📚</span>
-                    My Repertoire
-                </a>
-            </div>
-        </nav>
-    </aside>
-
-    <main class="main-layout">
-        <header class="content-header">
-            <h1>My Games</h1>
-            <p>{{ total_games }} games total</p>
-        </header>
-
-        <div class="content-body">
-            <!-- Filter & Bulk Form -->
-            <form id="games-form" method="GET" action="/games">
-                <!-- Toolbar -->
-                <div
-                    style="margin-bottom: 1rem; display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; justify-content: space-between;">
-                    <div style="display: flex; gap: 0.5rem; align-items: center;">
-                        <button type="button" id="analyze-selected-btn" class="btn btn-primary"
-                            onclick="analyzeSelected()" disabled>
-                            ⚡ Analyze Selected
-                        </button>
-                        <div id="selection-count" class="text-muted" style="font-size: 0.875rem; margin-left: 0.5rem;">
-                            0 selected
+    <div class="table-container" style="border: none; border-radius: 0;">
+        <table id="games-table">
+            <thead>
+                <tr>
+                    <th style="width: 40px; text-align: center;">
+                        <input type="checkbox" id="select-all" onclick="toggleSelectAll()" style="cursor: pointer;">
+                    </th>
+                    <th>Platform</th>
+                    <th>Players / Opening</th>
+                    <th style="text-align: center;">Result</th>
+                    <th style="text-align: center;">Accuracy</th>
+                    <th style="text-align: center;">Moves</th>
+                    <th>Date</th>
+                    <th style="text-align: right;">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for game in games %}
+                <tr class="game-row {% if game.analyzed %}is-analyzed{% endif %}"
+                    onclick="window.location.href='/games/{{ game.id }}'" style="cursor: pointer;">
+                    <td onclick="event.stopPropagation()" style="text-align: center;">
+                        <input type="checkbox" name="game_ids" value="{{ game.id }}" class="game-checkbox"
+                            onclick="updateSelection()" style="cursor: pointer;">
+                    </td>
+                    <td>
+                        <span
+                            class="badge {% if game.platform == 'chess.com' %}badge-success{% else %}badge-info{% endif %}">
+                            {{ game.platform }}
+                        </span>
+                    </td>
+                    <td>
+                        <div style="font-weight: 600;">
+                            {{ "%.10s"|format(game.white_username) }} <span
+                                style="font-weight: 400; color: var(--text-dim);">vs</span> {{
+                            "%.10s"|format(game.black_username) }}
                         </div>
-                    </div>
+                        <div style="font-size: 0.75rem; color: var(--text-dim); margin-top: 2px;">
+                            {{ game.opening_name or 'Unknown Opening' }}
+                        </div>
+                    </td>
+                    <td style="text-align: center;">
+                        <span
+                            style="font-family: monospace; font-weight: 600; color: {% if (game.result == '1-0' and game.player_color == 'white') or (game.result == '0-1' and game.player_color == 'black') %}var(--success){% elif game.result == '1/2-1/2' %}var(--text-dim){% else %}var(--error){% endif %};">
+                            {{ game.result }}
+                        </span>
+                    </td>
+                    <td style="text-align: center;">
+                        {% if game.analyzed %}
+                        <div style="display: flex; flex-direction: column; align-items: center; gap: 2px;">
+                            <span
+                                class="badge {% if game.player_accuracy and game.player_accuracy >= 80 %}badge-success{% elif game.player_accuracy and game.player_accuracy >= 60 %}badge-warning{% else %}badge-error{% endif %}"
+                                style="font-size: 0.7rem;">
+                                {{ "%.1f"|format(game.player_accuracy) if game.player_accuracy else '0.0' }}%
+                            </span>
+                        </div>
+                        {% else %}
+                        <span style="color: var(--text-dim); font-size: 0.75rem;">Unanalyzed</span>
+                        {% endif %}
+                    </td>
+                    <td style="text-align: center; color: var(--text-dim);">
+                        {{ game.total_moves or '-' }}
+                    </td>
+                    <td style="font-size: 0.8125rem;">
+                        <div>{{ game.date.strftime('%b %d, %Y') if game.date else '-' }}</div>
+                        <div style="color: var(--text-dim); font-size: 0.75rem;">{{ game.date.strftime('%H:%M') if
+                            game.date else '' }}</div>
+                    </td>
+                    <td onclick="event.stopPropagation()" style="text-align: right;">
+                        <a href="/games/{{ game.id }}" class="btn btn-secondary"
+                            style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">Review</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
 
-                    <div style="display: flex; gap: 0.5rem;">
-                        <select name="platform" class="form-select" onchange="this.form.submit()" style="width: auto;">
-                            <option value="">All Platforms</option>
-                            <option value="chess.com" {% if request.args.get('platform')=='chess.com' %}selected{% endif
-                                %}>Chess.com</option>
-                            <option value="lichess" {% if request.args.get('platform')=='lichess' %}selected{% endif %}>
-                                Lichess</option>
-                        </select>
-                        <select name="color" class="form-select" onchange="this.form.submit()" style="width: auto;">
-                            <option value="">All Colors</option>
-                            <option value="white" {% if request.args.get('color')=='white' %}selected{% endif %}>White
-                            </option>
-                            <option value="black" {% if request.args.get('color')=='black' %}selected{% endif %}>Black
-                            </option>
-                        </select>
-                        <select name="result" class="form-select" onchange="this.form.submit()" style="width: auto;">
-                            <option value="">All Results</option>
-                            <option value="win" {% if request.args.get('result')=='win' %}selected{% endif %}>Win
-                            </option>
-                            <option value="loss" {% if request.args.get('result')=='loss' %}selected{% endif %}>Loss
-                            </option>
-                            <option value="draw" {% if request.args.get('result')=='draw' %}selected{% endif %}>Draw
-                            </option>
-                        </select>
-                    </div>
-                </div>
+{% if total_games > per_page %}
+<div style="margin-top: 1.5rem; display: flex; justify-content: center; align-items: center; gap: 1rem;">
+    {% if page > 1 %}
+    <a href="?page={{ page - 1 }}" class="btn btn-secondary">← Prev</a>
+    {% endif %}
+    <span style="color: var(--text-dim); font-size: 0.875rem;">Page {{ page }}</span>
+    {% if page * per_page < total_games %} <a href="?page={{ page + 1 }}" class="btn btn-secondary">Next →</a>
+        {% endif %}
+</div>
+{% endif %}
 
-                <!-- Games Table -->
-                <div class="card" style="padding: 0; overflow: hidden; border: none; background: transparent;">
-                    <div class="table-container" style="border: none; border-radius: 8px; overflow: hidden;">
-                        <table class="games-table">
-                            <thead>
-                                <tr>
-                                    <th style="width: 40px; text-align: center;">
-                                        <input type="checkbox" id="select-all" onclick="toggleSelectAll()">
-                                    </th>
-                                    <th style="width: 40px;"></th> <!-- Link Column -->
-                                    <th style="min-width: 200px;">
-                                        Players
-                                    </th>
-                                    <th>Result</th>
-                                    <th class="table-text-center">Accuracy</th>
-                                    <th class="table-text-right">Moves</th>
-                                    <th class="table-text-right" style="min-width: 100px;">Date</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for game in games %}
-                                <tr style="cursor: pointer;" onclick="window.location='/games/{{ game.id }}'">
-                                    <td class="text-center" onclick="event.stopPropagation()">
-                                        <input type="checkbox" class="game-checkbox" value="{{ game.id }}"
-                                            onchange="updateSelection()">
-                                    </td>
+{% endblock %}
 
-                                    <!-- Link Column -->
-                                    <td class="link-cell">
-                                        {% if game.game_url %}
-                                        <a href="{{ game.game_url }}" target="_blank" class="external-link"
-                                            title="View on {{ game.platform }}">↗</a>
-                                        {% else %}
-                                        <span class="text-muted" style="font-size: 0.8em;">-</span>
-                                        {% endif %}
-                                    </td>
+{% block scripts %}
+<script>
+    function toggleSelectAll() {
+        const checkAll = document.getElementById('select-all');
+        const checkboxes = document.querySelectorAll('.game-checkbox');
+        checkboxes.forEach(cb => cb.checked = checkAll.checked);
+        updateSelection();
+    }
 
-                                    <td class="players-cell">
-                                        <div class="player-cell">
-                                            <!-- Opponent (Top) -->
-                                            <div class="player-info" style="margin-bottom: 2px;">
-                                                <span class="player-rating">
-                                                    {{ (game.player_rating if game.player_color == 'black' else
-                                                    game.opponent_rating) or '?' }}
-                                                </span>
-                                                <span class="player-name text-muted">
-                                                    {{ game.opponent_name or 'Opponent' }}
-                                                </span>
-                                            </div>
+    function updateSelection() {
+        const checkboxes = document.querySelectorAll('.game-checkbox:checked');
+        const btn = document.getElementById('analyze-selected-btn');
+        const countLabel = document.getElementById('selection-count');
 
-                                            <!-- Player (Bottom - Bold) -->
-                                            <div class="player-info">
-                                                <span class="player-rating">
-                                                    {{ (game.player_rating if game.player_color == 'white' else
-                                                    game.opponent_rating) or '?' }}
-                                                </span>
-                                                <span class="player-name">
-                                                    You
-                                                </span>
-                                            </div>
+        btn.disabled = checkboxes.length === 0;
+        countLabel.textContent = `${checkboxes.length} games selected`;
+    }
 
-                                            <div class="game-opening">{{ game.opening_name or '-' }}</div>
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <div style="display: flex; align-items: center; gap: 0.5rem;">
-                                            {% if game.result == 'win' %}
-                                            <span class="result-marker marker-win">1</span> <span
-                                                class="text-muted">Win</span>
-                                            {% elif game.result == 'checkmated' or game.result == 'resigned' or
-                                            game.result == 'timeout' or game.result == 'abandoned' %}
-                                            <span class="result-marker marker-loss">0</span> <span
-                                                class="text-muted">Loss</span>
-                                            {% elif game.result == 'draw' or game.result == 'repetition' or game.result
-                                            == 'stalemate' or game.result == 'insufficient' or game.result == 'agreed'
-                                            or game.result == 'timevsinsufficient' %}
-                                            <span class="result-marker marker-draw">½</span> <span
-                                                class="text-muted">Draw</span>
-                                            {% else %}
-                                            <span class="text-muted">{{ game.result|capitalize }}</span>
-                                            {% endif %}
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <div
-                                            style="display: flex; flex-direction: column; gap: 4px; font-size: 0.85em; font-weight: 600;">
-                                            <!-- Player Accuracy -->
-                                            <div
-                                                style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
-                                                <span
-                                                    style="color: var(--text-muted); font-size: 0.8em; margin-right: 4px;">You</span>
-                                                {% if game.player_accuracy %}
-                                                <span
-                                                    style="color: {% if game.player_accuracy >= 90 %}var(--success){% elif game.player_accuracy >= 70 %}var(--info){% else %}var(--warning){% endif %};">
-                                                    {{ "%.1f"|format(game.player_accuracy) }}
-                                                </span>
-                                                {% else %}
-                                                <span class="text-muted">-</span>
-                                                {% endif %}
-                                            </div>
-                                            <!-- Opponent Accuracy -->
-                                            <div
-                                                style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
-                                                <span
-                                                    style="color: var(--text-muted); font-size: 0.8em; margin-right: 4px;">Opp</span>
-                                                {% if game.opponent_accuracy %}
-                                                <span
-                                                    style="color: {% if game.opponent_accuracy >= 90 %}var(--success){% elif game.opponent_accuracy >= 70 %}var(--info){% else %}var(--warning){% endif %};">
-                                                    {{ "%.1f"|format(game.opponent_accuracy) }}
-                                                </span>
-                                                {% else %}
-                                                <span class="text-muted">-</span>
-                                                {% endif %}
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td class="text-muted" style="font-size: 0.9em;">
-                                        {{ game.total_moves or '-' }}
-                                    </td>
-                                    <td class="date-cell">
-                                        {{ game.date.strftime('%b %d, %Y') if game.date else '-' }}<br>
-                                        <span style="font-size: 0.8em; opacity: 0.7;">{{ game.date.strftime('%H:%M') if
-                                            game.date else '' }}</span>
-                                    </td>
-                                    <td onclick="event.stopPropagation()" style="text-align: right;">
-                                        <a href="/games/{{ game.id }}" class="btn btn-sm btn-secondary"
-                                            style="padding: 0.25rem 0.5rem;">Review</a>
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                </div> <!-- End Card -->
-            </form>
+    async function analyzeSelected() {
+        const checkboxes = document.querySelectorAll('.game-checkbox:checked');
+        const ids = Array.from(checkboxes).map(cb => parseInt(cb.value));
 
-            <!-- Pagination -->
-            {% if total_games > per_page %}
-            <div class="pagination">
-                {% if page > 1 %}
-                <a href="?page={{ page - 1 }}" class="btn btn-secondary">← Prev</a>
-                {% endif %}
+        if (!ids.length) return;
 
-                <span class="text-muted">Page {{ page }}</span>
+        if (!confirm(`Queue analysis for ${ids.length} games? This may take a few minutes.`)) return;
 
-                {% if page * per_page < total_games %} <a href="?page={{ page + 1 }}" class="btn btn-secondary">Next
-                    →</a>
-                    {% endif %}
-            </div>
-            {% endif %}
-        </div>
-        </div>
-    </main>
+        const btn = document.getElementById('analyze-selected-btn');
+        const originalContent = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Queueing...';
 
-    <script>
-        function toggleSelectAll() {
-            const checkAll = document.getElementById('select-all');
-            const checkboxes = document.querySelectorAll('.game-checkbox');
-            checkboxes.forEach(cb => cb.checked = checkAll.checked);
-            updateSelection();
-        }
+        try {
+            const response = await fetch('/api/analyze-games', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ game_ids: ids })
+            });
 
-        function updateSelection() {
-            const checkboxes = document.querySelectorAll('.game-checkbox:checked');
-            const btn = document.getElementById('analyze-selected-btn');
-            const countLabel = document.getElementById('selection-count');
+            const data = await response.json();
 
-            btn.disabled = checkboxes.length === 0;
-            countLabel.textContent = `${checkboxes.length} games selected`;
-        }
+            if (data.success) {
+                // Show success toast or similar
+                const toast = document.createElement('div');
+                toast.style.cssText = "position: fixed; bottom: 2rem; right: 2rem; background: var(--accent-primary); color: white; padding: 1rem 1.5rem; border-radius: 8px; box-shadow: var(--shadow-lg); z-index: 2000;";
+                toast.innerHTML = `<i class="fas fa-check-circle"></i> Queued ${data.queued} games for analysis!`;
+                document.body.appendChild(toast);
 
-        async function analyzeSelected() {
-            const checkboxes = document.querySelectorAll('.game-checkbox:checked');
-            const ids = Array.from(checkboxes).map(cb => parseInt(cb.value));
+                setTimeout(() => {
+                    toast.style.opacity = '0';
+                    toast.style.transition = 'opacity 0.5s ease-out';
+                    setTimeout(() => toast.remove(), 500);
+                }, 4000);
 
-            if (!ids.length) return;
+                // Clear selection
+                checkboxes.forEach(cb => cb.checked = false);
+                document.getElementById('select-all').checked = false;
+                updateSelection();
 
-            if (!confirm(`Queue analysis for ${ids.length} games?`)) return;
-
-            const btn = document.getElementById('analyze-selected-btn');
-            const originalText = btn.innerHTML;
-            btn.disabled = true;
-            btn.innerHTML = '<span class="spinner"></span>Queueing...';
-
-            try {
-                const response = await fetch('/api/analyze-games', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ game_ids: ids })
-                });
-
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-
-                const data = await response.json();
-
-                if (data.success) {
-                    // Show success state briefly before reload
-                    btn.innerHTML = '✅ Queued!';
-                    btn.classList.remove('btn-primary');
-                    btn.classList.add('btn-success'); // Assuming you have this or similar
-
-                    setTimeout(() => {
-                        window.location.reload();
-                    }, 1000);
-                } else {
-                    alert('Error: ' + (data.error || 'Unknown error occurred'));
-                    btn.innerHTML = originalText;
-                    btn.disabled = false;
-                }
-            } catch (e) {
-                console.error("Analysis Request Failed:", e);
-                alert('Request failed: ' + e.message);
-                btn.innerHTML = originalText;
-                btn.disabled = false;
+            } else {
+                alert(`Error: ${data.error}`);
             }
+        } catch (e) {
+            console.error(e);
+            alert('Failed to connect to the server');
+        } finally {
+            btn.innerHTML = originalContent;
+            btn.disabled = false;
         }
-
-        // Prevent row click when clicking links inside row
-        document.querySelectorAll('a, button, input').forEach(el => {
-            el.addEventListener('click', e => e.stopPropagation());
-        });
-    </script>
-</body>
-
-</html>
+    }
+</script>
+{% endblock %}

@@ -29,7 +29,7 @@ export PYTHONPATH=$PYTHONPATH:.
 
 # 2. Start Worker
 echo "👷 Starting Worker..."
-rq worker &
+rq worker analysis default &
 PID_WORKER=$!
 
 # 3. Start Web App

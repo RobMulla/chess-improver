@@ -102,10 +102,22 @@
                             </div>
                         </div>
 
-                        <div id="practice-board" style="max-width: 600px; margin: 0 auto;"></div>
+                        <div id="practice-board" style="max-width: 600px; margin: 0 auto; position: relative;"></div>
+
+                        <!-- History Controls -->
+                        <div class="history-controls">
+                            <button onclick="navigateHistory(0)" class="history-btn" title="Start"><i
+                                    class="fas fa-angle-double-left"></i></button>
+                            <button onclick="navigateHistory(currentHistoryIndex - 1)" class="history-btn"
+                                title="Previous"><i class="fas fa-angle-left"></i></button>
+                            <button onclick="navigateHistory(currentHistoryIndex + 1)" class="history-btn"
+                                title="Next"><i class="fas fa-angle-right"></i></button>
+                            <button onclick="navigateHistory(historyFens.length - 1)" class="history-btn"
+                                title="Current"><i class="fas fa-angle-double-right"></i></button>
+                        </div>
 
                         <div id="feedback-panel"
-                            style="margin-top: 1.5rem; padding: 1rem; border-radius: 8px; display: none;">
+                            style="margin-top: 1.5rem; padding: 1rem; border-radius: 8px; display: none; text-align: center; border: 1px solid transparent;">
                             <!-- Feedback will be shown here -->
                         </div>
 
@@ -123,9 +135,14 @@
                         <div class="card" style="margin-bottom: 1.5rem;">
                             <h3 style="margin-bottom: 1rem;">Position Context</h3>
                             <div style="font-size: 0.875rem; color: var(--text-muted); line-height: 1.8;">
+                                <div><strong>Game:</strong> <span id="ctx-game">-</span></div>
+                                <div><strong>Date:</strong> <span id="ctx-date">-</span></div>
+                                <div><strong>Players:</strong> <span id="ctx-players">-</span></div>
+                                <div><strong>Result:</strong> <span id="ctx-result">-</span></div>
                                 <div><strong>Opening:</strong> <span id="ctx-opening">-</span></div>
-                                <div><strong>Opponent:</strong> <span id="ctx-opponent">-</span></div>
                                 <div><strong>Phase:</strong> <span id="ctx-phase">-</span></div>
+                                <div><strong>Mistake:</strong> <span id="ctx-eval-drop"
+                                        style="color: var(--error); font-weight: bold;">-</span></div>
                                 <div><strong>Move:</strong> <span id="ctx-move">-</span></div>
                             </div>
                         </div>
@@ -189,6 +206,10 @@
         let score = { correct: 0, total: 0 };
         let currentAttempt = null;
         let sessionId = null;
+        let hasFailedThisPosition = false;
+
+        let historyFens = [];
+        let currentHistoryIndex = 0;
 
         async function startPractice() {
             const startBtn = document.getElementById('start-btn');
@@ -236,11 +257,27 @@
 
             const pos = practicePositions[currentIndex];
             game = new Chess(pos.fen);
+            hasFailedThisPosition = false;
+
+            // Generate history FENs
+            historyFens = [];
+            const hGame = new Chess();
+            historyFens.push(hGame.fen());
+            if (pos.history) {
+                pos.history.forEach(m => {
+                    hGame.move(m, { sloppy: true });
+                    historyFens.push(hGame.fen());
+                });
+            }
+            currentHistoryIndex = historyFens.length - 1;
 
             // Reset UI
             document.getElementById('feedback-panel').style.display = 'none';
             document.getElementById('next-btn').style.display = 'none';
             document.getElementById('show-btn').style.display = 'inline-block';
+            document.getElementById('hint-btn').style.display = 'inline-block';
+            clearHighlights();
+            clearArrows();
             currentAttempt = null;
 
             // Update progress
@@ -248,22 +285,72 @@
             document.getElementById('score-text').textContent = `Score: ${score.correct}/${score.total}`;
 
             // Update context
+            document.getElementById('ctx-game').innerHTML = `<a href="/games/${pos.game.id}" target="_blank" style="color: var(--accent-primary);">View Full Game ↗</a>`;
             document.getElementById('ctx-opening').textContent = pos.game.opening_name || 'Unknown';
-            document.getElementById('ctx-opponent').textContent = `${pos.game.opponent_name} (${pos.game.opponent_rating || '?'})`;
+            document.getElementById('ctx-date').textContent = pos.game.date || 'Unknown';
+            const whiteStr = `${pos.game.white_username || 'White'} (${pos.game.player_color === 'white' ? pos.game.player_rating : pos.game.opponent_rating})`;
+            const blackStr = `${pos.game.black_username || 'Black'} (${pos.game.player_color === 'black' ? pos.game.player_rating : pos.game.opponent_rating})`;
+            document.getElementById('ctx-players').textContent = `${whiteStr} vs ${blackStr}`;
+            document.getElementById('ctx-result').textContent = pos.game.result || 'Unknown';
             document.getElementById('ctx-phase').textContent = pos.game_phase || 'Unknown';
+            document.getElementById('ctx-eval-drop').textContent = `-${Math.abs(pos.eval_drop)} cp`;
             document.getElementById('ctx-move').textContent = `Move ${pos.move_number}`;
+
+            // Board Orientation
+            const orientation = pos.game.player_color === 'black' ? 'black' : 'white';
 
             // Setup board
             if (!board) {
                 board = Chessboard('practice-board', {
-                    position: pos.fen,
                     draggable: true,
                     onDrop: handleMove,
-                    pieceTheme: 'https://chessboardjs.com/img/chesspieces/wikipedia/{piece}.png'
+                    onDragStart: onDragStart,
+                    pieceTheme: 'https://chessboardjs.com/img/chesspieces/wikipedia/{piece}.png',
+                    orientation: orientation
+                });
+
+                // Add window resize listener to update arrows
+                window.addEventListener('resize', () => {
+                    if (currentIndex < practicePositions.length) {
+                        const pos = practicePositions[currentIndex];
+                        if (document.getElementById('next-btn').style.display !== 'none') {
+                            drawSolutionArrow(pos.best_move);
+                        }
+                    }
                 });
             } else {
-                board.position(pos.fen);
+                board.orientation(orientation);
             }
+
+            // Show start position if history exists, then animate the last move
+            if (historyFens.length > 1) {
+                board.position(historyFens[historyFens.length - 2], false);
+                setTimeout(() => {
+                    board.position(historyFens[historyFens.length - 1], true);
+                    currentHistoryIndex = historyFens.length - 1;
+                }, 800);
+            } else {
+                board.position(pos.fen, false);
+            }
+        }
+
+        function navigateHistory(idx) {
+            if (idx < 0) idx = 0;
+            if (idx >= historyFens.length) idx = historyFens.length - 1;
+
+            currentHistoryIndex = idx;
+            board.position(historyFens[currentHistoryIndex], true);
+        }
+
+        function onDragStart(source, piece, position, orientation) {
+            // Position must be at the latest state to move
+            if (currentHistoryIndex !== historyFens.length - 1) return false;
+
+            const pos = practicePositions[currentIndex];
+            const turn = pos.game.player_color === 'white' ? 'w' : 'b';
+            if (piece.search(new RegExp(`^${turn}`)) === -1) return false;
+
+            if (document.getElementById('next-btn').style.display !== 'none') return false;
         }
 
         function handleMove(source, target) {
@@ -293,30 +380,55 @@
             });
 
             const result = await response.json();
-            score.total++;
-
             const feedbackPanel = document.getElementById('feedback-panel');
-            document.getElementById('show-btn').style.display = 'none';
-            document.getElementById('next-btn').style.display = 'inline-block';
 
             if (result.correct) {
-                score.correct++;
-                feedbackPanel.style.background = 'var(--success-bg, #d4edda)';
-                feedbackPanel.style.color = 'var(--success)';
-                feedbackPanel.innerHTML = '<strong>✓ Correct!</strong> You found the best move.';
-            } else {
-                feedbackPanel.style.background = 'var(--error-bg, #f8d7da)';
-                feedbackPanel.style.color = 'var(--error)';
-                feedbackPanel.innerHTML = `<strong>✗ Incorrect.</strong> The best move was <strong>${formatMove(result.best_move)}</strong>. You played <strong>${formatMove(currentAttempt)}</strong>.`;
-            }
+                if (!hasFailedThisPosition) {
+                    score.correct++;
+                }
+                score.total++;
 
+                document.getElementById('show-btn').style.display = 'none';
+                document.getElementById('hint-btn').style.display = 'none';
+                document.getElementById('next-btn').style.display = 'inline-block';
+
+                feedbackPanel.style.display = 'block';
+                feedbackPanel.style.background = 'var(--success-bg)';
+                feedbackPanel.style.color = 'var(--success)';
+                feedbackPanel.innerHTML = '<strong>✓ Correct!</strong> That was the best move.';
+
+                drawSolutionArrow(pos.best_move);
+            } else {
+                hasFailedThisPosition = true;
+
+                feedbackPanel.style.display = 'block';
+                feedbackPanel.style.background = 'var(--error-bg)';
+                feedbackPanel.style.color = 'var(--error)';
+                feedbackPanel.innerHTML = '<strong>✗ Incorrect move.</strong> Try again or use a hint.';
+
+                setTimeout(() => {
+                    game.undo();
+                    board.position(game.fen());
+                }, 1000);
+            }
+        }
+
+        function showHint() {
+            const pos = practicePositions[currentIndex];
+            const from = pos.best_move.substring(0, 2);
+            $(`.square-${from}`).addClass('highlight-best');
+
+            const feedbackPanel = document.getElementById('feedback-panel');
             feedbackPanel.style.display = 'block';
+            feedbackPanel.style.background = 'var(--info-bg)';
+            feedbackPanel.style.color = 'var(--info)';
+            feedbackPanel.innerHTML = '<strong>💡 Hint:</strong> Try moving the highlighted piece.';
         }
 
         async function showAnswer() {
             const pos = practicePositions[currentIndex];
+            hasFailedThisPosition = true;
 
-            // Record attempt as given up
             await fetch('/api/practice/check', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -330,18 +442,91 @@
             score.total++;
 
             const feedbackPanel = document.getElementById('feedback-panel');
-            feedbackPanel.style.background = 'var(--info-bg, #d1ecf1)';
-            feedbackPanel.style.color = 'var(--info)';
-            feedbackPanel.innerHTML = `<strong>ℹ Best move:</strong> <strong>${formatMove(pos.best_move)}</strong>`;
             feedbackPanel.style.display = 'block';
+            feedbackPanel.style.background = 'var(--info-bg)';
+            feedbackPanel.style.color = 'var(--info)';
+            feedbackPanel.innerHTML = `<strong>ℹ Solution:</strong> The best move was <strong>${pos.best_move}</strong>.`;
 
             document.getElementById('show-btn').style.display = 'none';
+            document.getElementById('hint-btn').style.display = 'none';
             document.getElementById('next-btn').style.display = 'inline-block';
+
+            drawSolutionArrow(pos.best_move);
+        }
+
+        function clearHighlights() {
+            $('.square-55d63').removeClass('highlight-best highlight-error');
+        }
+
+        function drawSolutionArrow(moveUci) {
+            clearArrows();
+            clearHighlights();
+
+            const from = moveUci.substring(0, 2);
+            const to = moveUci.substring(2, 4);
+
+            drawArrow(from, to);
+            $(`.square-${to}`).addClass('highlight-best');
+        }
+
+        function clearArrows() {
+            $('#arrow-container').remove();
+        }
+
+        function drawArrow(from, to) {
+            const boardEl = $('#practice-board');
+            const boardWidth = boardEl.width();
+            if (!boardWidth) return;
+            const squareSize = boardWidth / 8;
+
+            const orientation = board.orientation();
+
+            const getCoords = (sq) => {
+                const col = sq.charCodeAt(0) - 97; // a=0
+                const row = parseInt(sq[1]) - 1;   // 1=0
+
+                let x, y;
+                if (orientation === 'white') {
+                    x = (col + 0.5) * squareSize;
+                    y = (7 - row + 0.5) * squareSize;
+                } else {
+                    x = (7 - col + 0.5) * squareSize;
+                    y = (row + 0.5) * squareSize;
+                }
+                return { x, y };
+            };
+
+            const start = getCoords(from);
+            const end = getCoords(to);
+
+            const svg = `
+                <svg id="arrow-container" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 10;">
+                    <defs>
+                        <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="8" refY="3.5" orient="auto">
+                            <polygon points="0 0, 10 3.5, 0 7" fill="#26c281" opacity="0.8" />
+                        </marker>
+                    </defs>
+                    <line x1="${start.x}" y1="${start.y}" x2="${end.x}" y2="${end.y}"
+                        stroke="#26c281" stroke-width="12" stroke-linecap="round"
+                        opacity="0.6" marker-end="url(#arrowhead)" />
+                </svg>
+            `;
+
+            boardEl.css('position', 'relative').append(svg);
+        }
+
+        function highlightBestMove(moveUci, isDiscovery = false) {
+            $('.square-55d63').removeClass('highlight-best highlight-error');
+
+            const from = moveUci.substring(0, 2);
+            const to = moveUci.substring(2, 4);
+
+            $(`.square-${from}`).addClass('highlight-best');
+            $(`.square-${to}`).addClass('highlight-best');
         }
 
         function nextPosition() {
             currentIndex++;
-            game.reset();
             loadPosition();
         }
 
@@ -360,11 +545,6 @@
                 showResults();
             }
         }
-
-        function formatMove(uci) {
-            if (!uci) return '-';
-            return uci;
-        }
     </script>
 
     <style>
@@ -381,6 +561,14 @@
         .practice-select:focus {
             outline: none;
             border-color: var(--accent-primary);
+        }
+
+        .highlight-best {
+            box-shadow: inset 0 0 3px 3px var(--success) !important;
+        }
+
+        .highlight-error {
+            box-shadow: inset 0 0 3px 3px var(--error) !important;
         }
     </style>
 </body>

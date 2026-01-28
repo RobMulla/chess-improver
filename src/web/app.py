@@ -215,12 +215,15 @@ def view_game(game_id):
             }
         )
 
+    # Determine PGN string safely
+    pgn_encoded = game.pgn if game.pgn else ""
+
     session.close()
 
     return render_template(
         "game_viewer.html",
         game=game,
-        pgn=game.pgn,
+        pgn=pgn_encoded,
         positions=positions,
         is_win=is_win,
         is_draw=is_draw,
@@ -513,20 +516,48 @@ def api_practice_positions():
     session.commit()
     session_id = new_session.id
 
+    from io import StringIO
+
+    import chess.pgn
+
     result = []
     for p in positions:
+        history_moves = []
+        try:
+            pgn = StringIO(p.game.pgn)
+            chess_game = chess.pgn.read_game(pgn)
+            all_moves = list(chess_game.mainline_moves())
+            # moves leading up to the target position
+            # if move_number is N, then N-1 moves have occurred
+            history_moves = [m.uci() for m in all_moves[: p.move_number - 1]]
+        except Exception as e:
+            print(f"Error extracting history: {e}")
+
         result.append(
             {
                 "id": p.id,
                 "fen": p.fen,
+                "history": history_moves,
                 "move_number": p.move_number,
                 "game_phase": p.game_phase,
                 "best_move": p.best_move,
+                "evaluation": p.evaluation,
+                "eval_drop": p.eval_drop,
                 "game": {
+                    "id": p.game.id,
                     "opening_name": p.game.opening_name,
+                    "white_username": p.game.white_username
+                    if hasattr(p.game, "white_username")
+                    else "White",
+                    "black_username": p.game.black_username
+                    if hasattr(p.game, "black_username")
+                    else "Black",
                     "opponent_name": p.game.opponent_name,
                     "opponent_rating": p.game.opponent_rating,
+                    "player_rating": p.game.player_rating,
                     "player_color": p.game.player_color,
+                    "date": p.game.date.strftime("%Y-%m-%d") if p.game.date else None,
+                    "result": p.game.result,
                 },
             }
         )

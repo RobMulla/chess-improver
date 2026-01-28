@@ -1,121 +1,45 @@
 {% extends "base.html" %}
 
-{% block title %}Practice History{% endblock %}
+{% block title %}Practice History - Chess Improver{% endblock %}
+
+{% block sub_header %}
+<header class="content-header">
+    <div class="header-flex">
+        <div>
+            <h1>Practice History</h1>
+            <p>Track your training progress over time</p>
+        </div>
+        <div class="header-actions">
+            <a href="/practice" class="btn btn-primary">🎯 Start New Session</a>
+        </div>
+    </div>
+</header>
+{% endblock %}
 
 {% block content %}
-<div class="container" style="max-width: 1200px; margin: 0 auto; padding: 2rem;">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
-        <h1>Practice History</h1>
-        <a href="/practice"
-            style="padding: 0.75rem 1.5rem; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; text-decoration: none; border-radius: 8px; font-weight: 600;">
-            ← Back to Practice
-        </a>
-    </div>
-
-    <div id="sessions-container">
-        <div style="text-align: center; padding: 3rem; color: #888;">
-            <div class="spinner"
-                style="width: 40px; height: 40px; margin: 0 auto 1rem; border: 4px solid #f3f3f3; border-top: 4px solid #667eea; border-radius: 50%; animation: spin 1s linear infinite;">
-            </div>
-            Loading sessions...
-        </div>
+<div id="sessions-container">
+    <div style="text-align: center; padding: 4rem; color: var(--text-dim);">
+        <div class="spinner-icon"
+            style="font-size: 2.5rem; margin-bottom: 1rem; display: inline-block; animation: spin 1.5s linear infinite;">
+            ⌛</div>
+        <p>Loading your training history...</p>
     </div>
 </div>
 
 <style>
     @keyframes spin {
-        0% {
+        from {
             transform: rotate(0deg);
         }
 
-        100% {
+        to {
             transform: rotate(360deg);
         }
     }
-
-    .sessions-table {
-        width: 100%;
-        border-collapse: collapse;
-        background: white;
-        border-radius: 12px;
-        overflow: hidden;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    }
-
-    .sessions-table thead {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-    }
-
-    .sessions-table th {
-        padding: 1rem;
-        text-align: left;
-        font-weight: 600;
-        font-size: 0.9rem;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
-
-    .sessions-table td {
-        padding: 1rem;
-        border-bottom: 1px solid #eee;
-    }
-
-    .sessions-table tbody tr:hover {
-        background-color: #f8f9fa;
-    }
-
-    .sessions-table tbody tr:last-child td {
-        border-bottom: none;
-    }
-
-    .accuracy-badge {
-        display: inline-block;
-        padding: 0.25rem 0.75rem;
-        border-radius: 20px;
-        font-weight: 600;
-        font-size: 0.9rem;
-    }
-
-    .accuracy-excellent {
-        background-color: #d4edda;
-        color: #155724;
-    }
-
-    .accuracy-good {
-        background-color: #fff3cd;
-        color: #856404;
-    }
-
-    .accuracy-poor {
-        background-color: #f8d7da;
-        color: #721c24;
-    }
-
-    .settings-pill {
-        display: inline-block;
-        padding: 0.25rem 0.5rem;
-        margin: 0.125rem;
-        background-color: #e9ecef;
-        border-radius: 4px;
-        font-size: 0.85rem;
-        color: #495057;
-    }
-
-    .empty-state {
-        text-align: center;
-        padding: 4rem 2rem;
-        color: #888;
-    }
-
-    .empty-state svg {
-        width: 100px;
-        height: 100px;
-        margin-bottom: 1rem;
-        opacity: 0.5;
-    }
 </style>
+{% endblock %}
 
+{% block scripts %}
 <script>
     async function loadSessions() {
         const container = document.getElementById('sessions-container');
@@ -132,9 +56,10 @@
         } catch (error) {
             console.error('Error loading sessions:', error);
             container.innerHTML = `
-                <div class="empty-state">
-                    <p style="color: #dc3545; font-size: 1.1rem;">❌ Error loading sessions</p>
-                    <p style="margin-top: 0.5rem; color: #888;">Please try again later</p>
+                <div class="card" style="text-align: center; padding: 3rem;">
+                    <div style="font-size: 3rem; margin-bottom: 1rem;">❌</div>
+                    <h3 style="color: var(--error);">Error Loading History</h3>
+                    <p style="color: var(--text-muted); margin-top: 0.5rem;">There was a problem connecting to the server. Please try again later.</p>
                 </div>
             `;
         }
@@ -143,126 +68,115 @@
     function renderSessionsTable(sessions) {
         const container = document.getElementById('sessions-container');
 
-        const table = document.createElement('table');
-        table.className = 'sessions-table';
-
-        // Header
-        table.innerHTML = `
-            <thead>
-                <tr>
-                    <th>Date</th>
-                    <th>Score</th>
-                    <th>Accuracy</th>
-                    <th>Filters</th>
-                </tr>
-            </thead>
-            <tbody>
-            </tbody>
-        `;
-
-        const tbody = table.querySelector('tbody');
-
-        sessions.forEach(session => {
-            const row = document.createElement('tr');
-
-            // Format date
-            const date = new Date(session.date);
-            const dateStr = date.toLocaleDateString('en-US', {
-                year: 'numeric',
-                month: 'short',
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit'
-            });
-
-            // Accuracy badge
-            let accuracyClass = 'accuracy-poor';
-            if (session.accuracy >= 80) accuracyClass = 'accuracy-excellent';
-            else if (session.accuracy >= 60) accuracyClass = 'accuracy-good';
-
-            // Settings pills
-            const settings = session.settings || {};
-            const settingsPills = [];
-
-            if (settings.color && settings.color !== 'both') {
-                settingsPills.push(`<span class="settings-pill">🎨 ${settings.color}</span>`);
-            }
-            if (settings.mistake_type && settings.mistake_type !== 'both') {
-                settingsPills.push(`<span class="settings-pill">⚠️ ${settings.mistake_type}</span>`);
-            }
-            if (settings.phase && settings.phase !== 'all') {
-                settingsPills.push(`<span class="settings-pill">🎯 ${settings.phase}</span>`);
-            }
-            if (settings.date_from || settings.date_to) {
-                settingsPills.push(`<span class="settings-pill">📅 Date Range</span>`);
-            }
-
-            row.innerHTML = `
-                <td>${dateStr}</td>
-                <td style="font-weight: 600; font-size: 1.1rem;">${session.score} / ${session.total}</td>
-                <td>
-                    <span class="accuracy-badge ${accuracyClass}">
-                        ${session.accuracy}%
-                    </span>
-                </td>
-                <td>${settingsPills.join(' ') || '<span style="color: #888;">None</span>'}</td>
-            `;
-
-            tbody.appendChild(row);
-        });
-
-        container.innerHTML = '';
-        container.appendChild(table);
-
-        // Add summary stats
-        const summary = document.createElement('div');
-        summary.style.cssText = 'margin-top: 2rem; padding: 1.5rem; background: #f8f9fa; border-radius: 12px; text-align: center;';
-
+        // Stats Summary
         const totalSessions = sessions.length;
         const avgAccuracy = (sessions.reduce((sum, s) => sum + s.accuracy, 0) / totalSessions).toFixed(1);
         const totalPositions = sessions.reduce((sum, s) => sum + s.total, 0);
         const totalCorrect = sessions.reduce((sum, s) => sum + s.score, 0);
 
-        summary.innerHTML = `
-            <h3 style="margin-bottom: 1rem; color: #495057;">📊 Overall Statistics</h3>
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; font-size: 1.1rem;">
-                <div>
-                    <div style="color: #888; font-size: 0.9rem; margin-bottom: 0.25rem;">Total Sessions</div>
-                    <div style="font-weight: 700; font-size: 1.5rem; color: #667eea;">${totalSessions}</div>
+        let html = `
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value">${totalSessions}</div>
+                    <div class="stat-label">Total Sessions</div>
                 </div>
-                <div>
-                    <div style="color: #888; font-size: 0.9rem; margin-bottom: 0.25rem;">Average Accuracy</div>
-                    <div style="font-weight: 700; font-size: 1.5rem; color: #764ba2;">${avgAccuracy}%</div>
+                <div class="stat-card">
+                    <div class="stat-value">${avgAccuracy}%</div>
+                    <div class="stat-label">Avg Accuracy</div>
                 </div>
-                <div>
-                    <div style="color: #888; font-size: 0.9rem; margin-bottom: 0.25rem;">Total Positions</div>
-                    <div style="font-weight: 700; font-size: 1.5rem; color: #28a745;">${totalPositions}</div>
+                <div class="stat-card">
+                    <div class="stat-value">${totalPositions}</div>
+                    <div class="stat-label">Positions Solved</div>
                 </div>
-                <div>
-                    <div style="color: #888; font-size: 0.9rem; margin-bottom: 0.25rem;">Total Correct</div>
-                    <div style="font-weight: 700; font-size: 1.5rem; color: #17a2b8;">${totalCorrect}</div>
+                <div class="stat-card">
+                    <div class="stat-value" style="color: var(--success);">${totalCorrect}</div>
+                    <div class="stat-label">Correct Moves</div>
+                </div>
+            </div>
+
+            <div class="card" style="padding: 0; overflow: hidden;">
+                <div class="card-header" style="padding: var(--spacing-lg); border: none;">
+                    <h2 class="card-title">Detailed Session History</h2>
+                </div>
+                <div class="table-container" style="border: none; border-radius: 0;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Date & Time</th>
+                                <th style="text-align: center;">Score</th>
+                                <th style="text-align: center;">Accuracy</th>
+                                <th>Session Filters</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+        `;
+
+        sessions.forEach(session => {
+            const date = new Date(session.date);
+            const dateStr = date.toLocaleDateString('en-US', {
+                month: 'short', day: 'numeric', year: 'numeric'
+            });
+            const timeStr = date.toLocaleTimeString('en-US', {
+                hour: '2-digit', minute: '2-digit'
+            });
+
+            // Accuracy badge
+            let badgeClass = 'badge-error';
+            if (session.accuracy >= 80) badgeClass = 'badge-success';
+            else if (session.accuracy >= 60) badgeClass = 'badge-warning';
+
+            // Settings
+            const settings = session.settings || {};
+            const pills = [];
+            if (settings.color !== 'both') pills.push(`🎨 ${settings.color}`);
+            if (settings.mistake_type !== 'both') pills.push(`⚠️ ${settings.mistake_type}`);
+            if (settings.phase !== 'all') pills.push(`🎯 ${settings.phase}`);
+
+            const pillsHtml = pills.map(p =>
+                `<span style="display:inline-block; padding: 2px 8px; background: var(--bg-tertiary); border-radius: 4px; font-size: 0.75rem; margin-right: 4px; color: var(--text-secondary);">${p}</span>`
+            ).join('');
+
+            html += `
+                <tr>
+                    <td>
+                        <div style="font-weight: 600;">${dateStr}</div>
+                        <div style="font-size: 0.75rem; color: var(--text-dim);">${timeStr}</div>
+                    </td>
+                    <td style="text-align: center; font-weight: 600;">
+                        ${session.score} <span style="color: var(--text-dim); font-weight: 400;">/ ${session.total}</span>
+                    </td>
+                    <td style="text-align: center;">
+                        <span class="badge ${badgeClass}">${session.accuracy}%</span>
+                    </td>
+                    <td>${pillsHtml || '<span style="color: var(--text-dim);">No filters</span>'}</td>
+                </tr>
+            `;
+        });
+
+        html += `
+                        </tbody>
+                    </table>
                 </div>
             </div>
         `;
 
-        container.appendChild(summary);
+        container.innerHTML = html;
     }
 
     function renderEmptyState() {
         const container = document.getElementById('sessions-container');
         container.innerHTML = `
-            <div class="empty-state">
-                <div style="font-size: 4rem; margin-bottom: 1rem;">📚</div>
-                <h2 style="color: #495057; margin-bottom: 0.5rem;">No Practice Sessions Yet</h2>
-                <p style="color: #888; margin-bottom: 2rem;">Start a practice session to see your history here</p>
-                <a href="/practice" style="display: inline-block; padding: 0.75rem 1.5rem; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; text-decoration: none; border-radius: 8px; font-weight: 600;">
-                    Start Practicing
-                </a>
+            <div class="card" style="text-align: center; padding: 5rem 2rem;">
+                <div style="font-size: 4rem; opacity: 0.5; margin-bottom: 1.5rem;">📚</div>
+                <h2 style="color: var(--text-primary);">No Practice History Yet</h2>
+                <p style="color: var(--text-muted); max-width: 400px; margin: 1rem auto 2rem;">
+                    Complete your first Blunder Buster session to start tracking your improvement progress.
+                </p>
+                <a href="/practice" class="btn btn-primary">Start Your First Session</a>
             </div>
         `;
     }
 
-    // Load sessions on page load
     document.addEventListener('DOMContentLoaded', loadSessions);
 </script>
 {% endblock %}

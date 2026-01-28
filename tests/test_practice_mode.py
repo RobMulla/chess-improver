@@ -71,7 +71,14 @@ def test_practice_positions(client):
     assert "positions" in data
     assert "session_id" in data
     assert len(data["positions"]) > 0
-    assert data["positions"][0]["best_move"] == "e2e4"
+
+    pos = data["positions"][0]
+    assert pos["best_move"] == "e2e4"
+    assert "evaluation" in pos
+    assert "eval_drop" in pos
+    assert "game" in pos
+    assert pos["game"]["opening_name"] == "Italian Game"
+    assert "history" in pos
 
 
 def test_practice_check_correct(client):

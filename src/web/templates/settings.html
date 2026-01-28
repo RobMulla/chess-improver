@@ -1,205 +1,254 @@
 {% extends "base.html" %}
 
-{% block content %}
-<div class="max-w-4xl mx-auto">
-    <div class="flex justify-between items-center mb-6">
-        <h1 class="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-600">
-            Settings
-        </h1>
-    </div>
+{% block title %}Settings - Chess Improver{% endblock %}
 
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+{% block sub_header %}
+<header class="content-header">
+    <div class="header-flex">
+        <div>
+            <h1>Settings</h1>
+            <p>Manage your accounts and analysis preferences</p>
+        </div>
+    </div>
+</header>
+{% endblock %}
+
+{% block content %}
+<div style="max-width: 1000px;">
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 1.5rem;">
         <!-- Account Settings -->
-        <div class="bg-gray-800 rounded-xl shadow-lg border border-gray-700 p-6">
-            <h2 class="text-xl font-semibold mb-4 text-purple-300">
-                <i class="fas fa-user-circle mr-2"></i>Accounts
+        <div class="card">
+            <h2 class="card-title" style="margin-bottom: 1.5rem;">
+                <i class="fas fa-user-circle" style="margin-right: 0.5rem; color: var(--accent-primary);"></i>
+                Connected Accounts
             </h2>
+
             <form action="{{ url_for('settings') }}" method="POST">
-                <div class="space-y-4">
+                <div style="display: flex; flex-direction: column; gap: 1.25rem;">
                     <div>
-                        <label class="block text-gray-400 mb-2 font-medium">Chess.com Username</label>
+                        <label
+                            style="display: block; margin-bottom: 0.5rem; font-size: 0.875rem; color: var(--text-muted);">Chess.com
+                            Username</label>
                         <input type="text" name="chess_com_username" value="{{ config.get('chess_com_username', '') }}"
-                            class="w-full bg-gray-900 border border-gray-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-purple-500 placeholder-gray-600"
-                            placeholder="e.g. Hikaru">
+                            class="form-input" placeholder="e.g. Hikaru">
                     </div>
 
                     <div>
-                        <label class="block text-gray-400 mb-2 font-medium">Lichess Username</label>
+                        <label
+                            style="display: block; margin-bottom: 0.5rem; font-size: 0.875rem; color: var(--text-muted);">Lichess
+                            Username</label>
                         <input type="text" name="lichess_username" value="{{ config.get('lichess_username', '') }}"
-                            class="w-full bg-gray-900 border border-gray-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-purple-500 placeholder-gray-600"
-                            placeholder="e.g. MagnusCarlsen">
+                            class="form-input" placeholder="e.g. MagnusCarlsen">
                     </div>
                 </div>
 
-                <div class="mt-6 pt-6 border-t border-gray-700">
-                    <button type="submit"
-                        class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-lg transition duration-200 transform hover:scale-[1.02]">
-                        Save Settings
+                <div style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--border-subtle);">
+                    <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center;">
+                        Save Account Settings
                     </button>
                 </div>
             </form>
 
             <!-- Sync Actions -->
-            <div class="mt-6 pt-6 border-t border-gray-700">
-                <h3 class="text-sm uppercase tracking-wide text-gray-500 font-semibold mb-3">Actions</h3>
-                <button type="button" onclick="syncGames()" id="syncBtn"
-                    class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition duration-200 flex justify-center items-center shadow-md">
-                    <i class="fas fa-sync-alt mr-2" id="syncIcon"></i>
+            <div style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--border-subtle);">
+                <h3
+                    style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-dim); margin-bottom: 1rem;">
+                    Data Import
+                </h3>
+                <button type="button" onclick="syncGames()" id="syncBtn" class="btn btn-secondary"
+                    style="width: 100%; justify-content: center;">
+                    <i class="fas fa-sync-alt" id="syncIcon" style="margin-right: 0.5rem;"></i>
                     <span>Sync All Games</span>
                 </button>
-                <p class="text-xs text-gray-500 mt-2 text-center">Imports new games from connected accounts background.
+                <p style="font-size: 0.75rem; color: var(--text-dim); margin-top: 0.75rem; text-align: center;">
+                    Imports your latest games from Chess.com and Lichess in the background.
                 </p>
 
                 <!-- Progress Bar -->
-                <div id="syncProgress" class="hidden mt-4">
-                    <div class="flex justify-between text-xs text-gray-400 mb-1">
+                <div id="syncProgress" style="display: none; margin-top: 1.25rem;">
+                    <div
+                        style="display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.5rem;">
                         <span id="syncStatusText">Starting sync...</span>
                         <span id="syncPercent">0%</span>
                     </div>
-                    <div class="w-full bg-gray-700 rounded-full h-2.5">
-                        <div id="syncBar" class="bg-blue-600 h-2.5 rounded-full transition-all duration-500"
-                            style="width: 0%"></div>
+                    <div class="progress-bar">
+                        <div id="syncBar" class="progress-fill" style="width: 0%"></div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <script>
-            async function syncGames() {
-                const btn = document.getElementById('syncBtn');
-                const icon = document.getElementById('syncIcon');
-                const span = btn.querySelector('span');
-                const progressDiv = document.getElementById('syncProgress');
-                const progressBar = document.getElementById('syncBar');
-                const statusText = document.getElementById('syncStatusText');
-                const percentText = document.getElementById('syncPercent');
-
-                const originalText = span.innerText;
-
-                // UI Loading state
-                btn.disabled = true;
-                btn.classList.add('opacity-75', 'cursor-wait');
-                icon.classList.add('fa-spin');
-                span.innerText = 'Queuing...';
-
-                try {
-                    const response = await fetch('/api/sync-games', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({})
-                    });
-
-                    const data = await response.json();
-
-                    if (data.success && data.jobs && data.jobs.length > 0) {
-                        // Show progress bar
-                        progressDiv.classList.remove('hidden');
-
-                        // Poll all jobs (simplified: poll the first one for now or tracking aggregate?)
-                        // If multiple jobs (chess.com + lichess), tracking is complex.
-                        // Let's track the first job found.
-                        const jobId = data.jobs[0].job_id;
-                        pollJob(jobId);
-
-                    } else if (data.success) {
-                        alert('No accounts configured or no games to sync.');
-                        resetUI();
-                    } else {
-                        alert(`Sync failed: ${data.error || 'Unknown error'}`);
-                        resetUI();
-                    }
-                } catch (e) {
-                    alert('Error connecting to server');
-                    console.error(e);
-                    resetUI();
-                }
-
-                function resetUI() {
-                    btn.disabled = false;
-                    btn.classList.remove('opacity-75', 'cursor-wait');
-                    icon.classList.remove('fa-spin');
-                    span.innerText = originalText;
-                    // Don't hide progress immediately if it was success/fail, user wants to see result?
-                    // Actually reset should hide it if called on error.
-                }
-
-                async function pollJob(jobId) {
-                    const pollInterval = setInterval(async () => {
-                        try {
-                            const res = await fetch(`/api/jobs/${jobId}`);
-                            const job = await res.json();
-
-                            if (job.status === 'finished' || job.status === 'failed') {
-                                clearInterval(pollInterval);
-                                finalize(job);
-                            } else {
-                                // Update progress
-                                const progress = (job.meta && job.meta.progress) ? job.meta.progress : 0;
-                                progressBar.style.width = `${progress}%`;
-                                percentText.innerText = `${progress}%`;
-                                statusText.innerText = `Syncing... ${job.status}`;
-                            }
-                        } catch (e) {
-                            console.error("Polling error", e);
-                        }
-                    }, 1000);
-                }
-
-                function finalize(job) {
-                    progressBar.style.width = '100%';
-                    percentText.innerText = '100%';
-
-                    if (job.status === 'finished') {
-                        statusText.innerText = 'Sync Complete!';
-                        progressBar.classList.remove('bg-blue-600');
-                        progressBar.classList.add('bg-green-500');
-
-                        // Success Toast
-                        const toast = document.createElement('div');
-                        toast.className = "fixed bottom-4 right-4 bg-green-600 text-white px-6 py-3 rounded-lg shadow-xl animate-bounce-in z-50";
-                        toast.innerHTML = `<i class="fas fa-check-circle mr-2"></i> Imported ${job.meta ? job.meta.imported_count : '?'} games!`;
-                        document.body.appendChild(toast);
-                        setTimeout(() => toast.remove(), 4000);
-
-                    } else {
-                        statusText.innerText = 'Sync Failed';
-                        progressBar.classList.remove('bg-blue-600');
-                        progressBar.classList.add('bg-red-500');
-                        alert(`Sync job failed: ${job.error}`);
-                    }
-
-                    setTimeout(resetUI, 2000);
-                }
-            }
-        </script>
-
-        <!-- Preferences (Placeholder for now) -->
-        <div class="bg-gray-800 rounded-xl shadow-lg border border-gray-700 p-6 opacity-75">
-            <h2 class="text-xl font-semibold mb-4 text-gray-400">
-                <i class="fas fa-sliders-h mr-2"></i>Analysis Preferences
+        <!-- Preferences Section -->
+        <div class="card" style="opacity: 0.8;">
+            <h2 class="card-title" style="margin-bottom: 1.5rem;">
+                <i class="fas fa-sliders-h" style="margin-right: 0.5rem; color: var(--text-dim);"></i>
+                Analysis Preferences
             </h2>
-            <p class="text-gray-500 text-sm mb-4">Advanced engine settings coming soon.</p>
 
-            <div class="space-y-4">
+            <div style="display: flex; flex-direction: column; gap: 1.25rem;">
                 <div>
-                    <label class="block text-gray-500 mb-2">Engine Threads</label>
-                    <select disabled
-                        class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 text-gray-500 cursor-not-allowed">
+                    <label
+                        style="display: block; margin-bottom: 0.5rem; font-size: 0.875rem; color: var(--text-dim);">Stockfish
+                        Depth</label>
+                    <select disabled class="form-select" style="cursor: not-allowed; opacity: 0.6;">
+                        <option>Depth 15 (Fast)</option>
+                        <option selected>Depth 20 (Standard)</option>
+                        <option>Depth 25 (Deep)</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label
+                        style="display: block; margin-bottom: 0.5rem; font-size: 0.875rem; color: var(--text-dim);">Threads</label>
+                    <select disabled class="form-select" style="cursor: not-allowed; opacity: 0.6;">
                         <option>Auto</option>
                         <option>1</option>
                         <option>2</option>
                         <option>4</option>
                     </select>
                 </div>
+
+                <div
+                    style="background: var(--bg-tertiary); padding: 1rem; border-radius: 8px; border: 1px dashed var(--border-subtle);">
+                    <p style="font-size: 0.8125rem; color: var(--text-dim); text-align: center;">
+                        Advanced engine controls are coming in the next update.
+                    </p>
+                </div>
             </div>
         </div>
     </div>
-
-    <!-- Toast Notification (if success) -->
-    {% if success %}
-    <div class="fixed bottom-4 right-4 bg-green-600 text-white px-6 py-3 rounded-lg shadow-xl animate-bounce-in">
-        <i class="fas fa-check-circle mr-2"></i> Settings saved successfully!
-    </div>
-    {% endif %}
 </div>
+
+<!-- Success Notification -->
+{% if success %}
+<div id="success-toast"
+    style="position: fixed; bottom: 2rem; right: 2rem; background: var(--success); color: white; padding: 1rem 1.5rem; border-radius: 8px; box-shadow: var(--shadow-lg); display: flex; align-items: center; gap: 0.75rem; z-index: 2000; animation: slideIn 0.3s ease-out;">
+    <i class="fas fa-check-circle"></i>
+    <span style="font-weight: 600;">Settings saved successfully!</span>
+</div>
+<script>
+    setTimeout(() => {
+        const toast = document.getElementById('success-toast');
+        if (toast) {
+            toast.style.opacity = '0';
+            toast.style.transition = 'opacity 0.5s ease-out';
+            setTimeout(() => toast.remove(), 500);
+        }
+    }, 4000);
+</script>
+{% endif %}
+
+<style>
+    @keyframes slideIn {
+        from {
+            transform: translateY(20px);
+            opacity: 0;
+        }
+
+        to {
+            transform: translateY(0);
+            opacity: 1;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    async function syncGames() {
+        const btn = document.getElementById('syncBtn');
+        const icon = document.getElementById('syncIcon');
+        const span = btn.querySelector('span');
+        const progressDiv = document.getElementById('syncProgress');
+        const progressBar = document.getElementById('syncBar');
+        const statusText = document.getElementById('syncStatusText');
+        const percentText = document.getElementById('syncPercent');
+
+        const originalText = span.innerText;
+
+        // UI Loading state
+        btn.disabled = true;
+        btn.style.opacity = '0.7';
+        icon.classList.add('fa-spin');
+        span.innerText = 'Queuing...';
+
+        try {
+            const response = await fetch('/api/sync-games', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({})
+            });
+
+            const data = await response.json();
+
+            if (data.success && data.jobs && data.jobs.length > 0) {
+                progressDiv.style.display = 'block';
+                const jobId = data.jobs[0].job_id;
+                pollJob(jobId);
+            } else if (data.success) {
+                alert('No accounts configured or no games to sync.');
+                resetUI();
+            } else {
+                alert(`Sync failed: ${data.error || 'Unknown error'}`);
+                resetUI();
+            }
+        } catch (e) {
+            alert('Error connecting to server');
+            console.error(e);
+            resetUI();
+        }
+
+        function resetUI() {
+            btn.disabled = false;
+            btn.style.opacity = '1';
+            icon.classList.remove('fa-spin');
+            span.innerText = originalText;
+        }
+
+        async function pollJob(jobId) {
+            const pollInterval = setInterval(async () => {
+                try {
+                    const res = await fetch(`/api/jobs/${jobId}`);
+                    const job = await res.json();
+
+                    if (job.status === 'finished' || job.status === 'failed') {
+                        clearInterval(pollInterval);
+                        finalize(job);
+                    } else {
+                        const progress = (job.meta && job.meta.progress) ? job.meta.progress : 0;
+                        progressBar.style.width = `${progress}%`;
+                        percentText.innerText = `${progress}%`;
+                        statusText.innerText = `Syncing... ${job.status}`;
+                    }
+                } catch (e) {
+                    console.error("Polling error", e);
+                }
+            }, 1000);
+        }
+
+        function finalize(job) {
+            progressBar.style.width = '100%';
+            percentText.innerText = '100%';
+
+            if (job.status === 'finished') {
+                statusText.innerText = 'Sync Complete!';
+                progressBar.style.background = 'var(--success)';
+
+                // Success notification
+                const toast = document.createElement('div');
+                toast.style.cssText = "position: fixed; bottom: 2rem; right: 2rem; background: var(--success); color: white; padding: 1rem 1.5rem; border-radius: 8px; box-shadow: var(--shadow-lg); display: flex; align-items: center; gap: 0.75rem; z-index: 2000;";
+                toast.innerHTML = `<i class="fas fa-check-circle"></i> <span style="font-weight:600;">Imported ${job.meta ? job.meta.imported_count : '?'} games!</span>`;
+                document.body.appendChild(toast);
+                setTimeout(() => toast.remove(), 4000);
+
+            } else {
+                statusText.innerText = 'Sync Failed';
+                progressBar.style.background = 'var(--error)';
+                alert(`Sync job failed: ${job.error}`);
+            }
+
+            setTimeout(resetUI, 2000);
+        }
+    }
+</script>
 {% endblock %}
