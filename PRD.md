@@ -1,122 +1,88 @@
 # Chess Improver - Product Requirements Document
 
-**Last Updated:** January 27, 2026
-**Status:** Core v1.0 COMPLETE ✅
+**Last Updated:** January 28, 2026
+**Status:** Phase 4 Planning (Refinement & UI Overhaul)
 
 ## 🎯 Vision
 
-**Chess Improver** is a web-based chess training platform that analyzes your games from Chess.com and Lichess, identifies your mistakes, and helps you improve through targeted practice and data-driven insights.
+**Chess Improver** is a self-hosted, UI-first web application for serious chess improvement. It empowers users to aggregate their game history from multiple platforms (Chess.com, Lichess), analyze it with professional-grade engines, and systematically eliminate mistakes through targeted, interactive practice.
 
-**Mission:** Make chess improvement accessible, personalized, and data-driven by focusing on re-learning from your actual mistakes.
-
----
-
-## 👥 Target Users
-
-**Primary:** Amateur chess players (800-2000 ELO) who:
-- Play regularly on Chess.com or Lichess
-- Want to improve systematically by reviewing their own blunders
-- Prefer a clean, UI-driven experience over CLI tools
-- Have 10-30 minutes daily for targeted practice
+**Core Philosophy:** "Everything in the UI." No command-line tools required for daily operation.
 
 ---
 
-## 🎨 Core User Experience
+## 🗺️ User Journey & Core Modules
 
-### User Journey
-1. **Configure** site settings with Chess.com/Lichess usernames and analysis preferences.
-2. **Import** games seamlessly via the Web UI (background sync).
-3. **Analyze** games with professional-grade Stockfish evaluation and Win% accuracy metrics.
-4. **Practice** specific mistakes in the **"Blunder Buster"** interactive trainer.
-5. **Track** progress through session history and aggregate accuracy stats.
+The application flow is designed to guide the user from data ingestion to actionable improvement.
 
-### Key Differentiators
-- **UI-First Experience**: No CLI required; all operations (sync, analyze, practice) are in the browser.
-- **Blunder-Focused Training**: Practice only the moves you actually missed in your own games.
-- **Persistent Progress**: Every practice attempt and session is stored for long-term tracking.
-- **Professional Analytics**: Win% based move classification on par with Lichess/Chess.com standards.
+### 1. ⚙️ Settings & Onboarding
+*The entry point for new users.*
+- **Account Management**: Persistent storage of multiple Chess.com and Lichess usernames.
+- **Onboarding Nudge**: If no accounts are configured, a banner prompts the user to set them up immediately.
+- **Config Persistence**: All settings (engine depth, threads, themes) are saved to the database.
 
----
+### 2. 📊 Data Overview (The "Hub")
+*A clear, visual summary of the user's data state.*
+- **Activity Heatmap**: A "GitHub-style" contribution graph showing games played per day over the last year.
+    - **Color Coding**: Differentiate between *missing*, *imported*, and *analyzed* days.
+    - **Interactivity**: Clicking a date allows for immediate import/analysis of that range.
+- **Sync Status**: clear distinction between "Imported" and "Analyzed" games.
+- **Actionable Imports**: "Import New Games" buttons located directly next to linked accounts.
+- **Smart Analysis**: Ability to select specific ranges for analysis, with warnings if re-analyzing existing data.
 
-## 🏗️ Product Architecture
+### 3. 📑 Games Overview
+*A powerful, spreadsheet-like interface for managing the game library.*
+- **Excel-like Experience**: High-density table view that fills the viewport.
+    - **Fixed Headers**: Sort and filter columns (Date, Opening, Result, Accuracy) without losing context.
+    - **Infinite Scroll/Pagination**: Handle thousands of games smoothly.
+- **Keyboard Navigation**: Move through rows with arrow keys.
+- **Customizable**: User can select how many rows to view per page.
 
-### Technology Stack
-**Frontend:**
-- Clean, modern UI using **Tailwind CSS** and **Inter** typography.
-- **Vanilla JavaScript** (no heavy frameworks) for fast, responsive interactions.
-- Interactive chessboard using **chess.js** and **chessboard.js**.
+### 4. ♟️ Single Game Viewer
+*Distraction-free deep dive into a single game.*
+- **Single-Page Feel**: No scrolling required. The board, move list, and analysis pane fit perfectly within the viewport.
+- **Tabbed Sidebar**: "Moves" and "Analysis" are separated to keep the interface clean.
+- **Independent Scrolling**: Move list scrolls independently of the board/layout.
+- **Evaluation Bar**: Visual representation of the game's swing.
 
-**Backend:** ✅ COMPLETE
-- **Python Flask** for the web server and API.
-- **Stockfish** engine for local high-depth analysis.
-- **Redis + RQ** for asynchronous game syncing and analysis.
-- **SQLAlchemy + SQLite** for persistent storage of games, moves, sessions, and configs.
-
-**Testing:** ✅ 100% Core Pass Rate
-- Comprehensive test suite for Win% logic, Move Classification, and Practice Mode.
-- Isolated in-memory database testing for API endpoints.
-
----
-
-## ✨ Feature Specifications
-
-### 1. Unified Dashboard
-- **Overview Stats**: Total games, analyzed games, and analysis progress.
-- **Top Openings**: Performance breakdown (wins/draws/losses) of your most-played openings.
-- **Quick Navigation**: One-click access to Sync, Practice, and Settings.
-
-### 2. Games Library & Viewer
-- **Filtered Browser**: Filter games by date, platform, result, and opening.
-- **Deep Analysis**: Step through games with move-by-move evaluation and classification (Best, Excellent, Mistake, Blunder).
-- **Game Phase Detection**: Smart classification of moves into Opening, Middlegame, and Endgame.
-
-### 3. "Blunder Buster" Practice Mode
-- **Smart Filtering**: Launch sessions based on specific criteria:
-  - playing as White/Black
-  - Mistake vs. Blunder focus
-  - specific game phases (Endgames only, etc.)
-  - specific date ranges
-- **Interactive Gameplay**: Replay the position and find the engine's best move.
-- **Immediate Feedback**: Correct/Incorrect validation with the option to "Show Solution."
-- **Session History**: Review past training runs, accuracy percentages, and aggregate improvement stats.
-
-### 4. Settings & Data Management
-- **Persistent Identity**: Store multiple usernames for Chess.com and Lichess.
-- **Sync Control**: Trigger background updates and track import progress directly from the UI.
+### 5. 💥 "Blunder Buster" (Practice Mode)
+*The core training loop. Re-play your mistakes to learn.*
+- **Session Setup**:
+    - **Selectors**: Choose criteria: Color (White/Black), Phase (Opening/Mid/End), Severity (Blunder/Mistake).
+    - **Filters**: Recent games (last week/month) or specific dates.
+    - **Goal**: Set number of positions to solve (e.g., 20 moves).
+- **The Gameplay Loop**:
+    - **Progress Bar**: A row of boxes (Green=Correct, Red=Failed, Grey=Pending) showing session status at a glance.
+    - **Orientation**: Board **MUST** always flip to the player's perspective.
+    - **Context**: Animate the opponent's last move before passing control.
+    - **Retry Logic**:
+        - **Incorrect**: Board flashes red. Show the opponent's refutation (best engine response). User must retry until correct (but marked as "Failed").
+        - **Correct**: Board flashes green.
+        - **Hint**: Show piece to move (marks as failed).
+        - **Show Answer**: Draw arrow on board (marks as failed).
+    - **Forced Progression**: User explicitly clicks "Next Position" to review the board state before moving on.
+- **Session Summary**: After completion, show stats, accuracy, and time spent.
 
 ---
 
-## 🧪 Testing Requirements
+## 🏗️ Technical Architecture
 
-**MANDATORY Standards:**
-1. **TDD Flow**: Every feature improvement (like Blunder Buster) must include corresponding `pytest` cases.
-2. **Pre-commit Compliance**: Code must pass `ruff` formatting, linting, and security audits (`bandit`).
-3. **Regression Safety**: Coverage must be maintained on all core analysis and practice logic.
+### Tech Stack
+- **Frontend**: Vanilla JS (ES6+) + Tailwind CSS. *Exploring lightweight frameworks (Alpine.js / Preact) for complex data tables if needed.*
+- **Backend**: Python Flask.
+- **Database**: SQLite + SQLAlchemy (Data consistency is paramount).
+- **Engine**: Stockfish 16+ via Python wrapper.
+- **Async Processing**: Redis + RQ for handling long-running analysis jobs without blocking the UI.
 
----
-
-## 🐛 Resolved Issues (Phase 2 & 3)
-- ✅ **Move Classification**: Fixed 100% accuracy bug; now uses Win% loss distribution.
-- ✅ **Opening Detection**: Standardized naming and unified opening labels across the DB.
-- ✅ **UI Cleanup**: Removed legacy "Daily Plan" and "Insights" modules in favor of the focused "Blunder Buster" vision.
-- ✅ **Session Isolation**: Fixed integration test failures related to database state leakage.
-
----
-
-## � Roadmap
-
-### Phase 4: Refined Practice (Next)
-- [ ] **Openings Practice**: Set "ideal" opening branches and practice your preparation.
-- [ ] **SRS Integration**: Implement Spaced Repetition (SRS) to show recurring mistakes more frequently.
-- [ ] **Advanced Stats**: Heatmaps of common mistake squares and time management analysis.
-
-### Phase 5: Scale & Social
-- [ ] AI-powered position explanations (LLM integration).
-- [ ] Mobile-responsive design optimization.
-- [ ] User accounts (OAuth integration).
+### Data Models (Refined)
+- **UserConfig**: Stores accounts and preferences.
+- **Game**: The central entity. Stores PGN, analysis status, and move-level accuracy metrics.
+- **Position**: Individual fen/move snapshots for practice.
+- **PracticeSession**: Logs of training runs (score, time, settings) to track improvement over time.
 
 ---
 
-**Version:** 1.0 (Post-Phase 3)
-**Author:** Antigravity AI
-**Status:** Main implementation complete; shifted to refinement and new training modules.
+## 🧪 Engineering Standards
+1.  **Test-Driven**: Logic for move classification, win% extraction, and practice positioning must be tested.
+2.  **Linting**: Strict `ruff` and `bandit` compliance.
+3.  **UI Verification**: Ensure board orientation and "Excel-like" behavior works across browsers.

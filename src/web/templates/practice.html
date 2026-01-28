@@ -441,13 +441,23 @@
                     }
                 });
             } else {
+                console.log(`Setting existing board orientation to: ${orientation}`);
                 board.orientation(orientation);
             }
 
-            // High-reliability orientation check: ensure redraw and orientation stick
-            setTimeout(() => { if (board) board.orientation(orientation); }, 50);
-            setTimeout(() => { if (board) board.orientation(orientation); }, 250);
-            setTimeout(() => { if (board) board.orientation(orientation); }, 1000);
+            const forceOrientation = () => {
+                if (board && board.orientation() !== orientation) {
+                    console.warn(`[Correction] Orientation was ${board.orientation()}, forcing back to ${orientation}`);
+                    board.orientation(orientation);
+                }
+            };
+
+            // Aggressive orientation enforcement during transition
+            forceOrientation();
+            setTimeout(forceOrientation, 50);
+            setTimeout(forceOrientation, 250);
+            setTimeout(forceOrientation, 850); // After animation starts
+            setTimeout(forceOrientation, 1500); // After animation finishes
 
             // Show start position if history exists, then animate the last move
             if (historyFens.length > 1) {
