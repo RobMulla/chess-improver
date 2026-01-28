@@ -1,109 +1,84 @@
-# Chess Improver 🚀
+# Chess Improver
 
-**AI-powered chess training platform** that analyzes your games, identifies mistakes, and helps you improve through targeted practice.
+**A self-hosted, analytical platform for systematic chess improvement.**
 
-[![Tests](https://img.shields.io/badge/tests-70%20passing-success)]() [![Coverage](https://img.shields.io/badge/coverage-40%25-yellow)]() [![Python](https://img.shields.io/badge/python-3.14-blue)]()
+Chess Improver aggregates game history from external platforms, processes it through professional-grade analysis engines, and generates targeted, spaced-repetition practice sessions to address specific performance gaps.
 
-## 🎯 Features
+## Feature Matrix
 
-- **Automatic Game Import** from Chess.com and Lichess
-- **Stockfish Analysis** with Win% algorithm (Lichess method)
-- **Smart Move Classification** (Best → Blunder based on Win% loss)
-- **Interactive Practice Mode** for your actual mistakes
-- **Performance Insights** and trends
-- **Background Analysis** with Redis job queue
+| Feature | Description | Support Level |
+| :--- | :--- | :--- |
+| **Multi-Platform Import** | Aggregation of history from Chess.com and Lichess. | ✅ Full |
+| **Engine Analysis** | Server-side analysis using Stockfish 16+. | ✅ Full |
+| **Move Classification** | Algorithmic detection of Brilliances, Mistakes, and Blunders. | ✅ Full |
+| **Practice Mode** | Interactive replay of tactical errors from your own games. | ✅ Full |
+| **Data Visualization** | Heatmaps and trend analysis for long-term improvement tracking. | ⚠️ Partial |
+| **Bulk Processing** | Asynchronous queuing for heavy analysis workloads. | ✅ Full |
 
-## 🚀 Quick Start
+## Quick Start
+
+### 1. Installation
 
 ```bash
-# 1. Clone and setup
+# Clone the repository
 git clone <repo-url>
 cd chess-improver
+
+# Initialize environment
 python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+source venv/bin/activate
 
-# 2. Install dependencies
+# Install dependencies
 pip install -r requirements.txt
-
-# 3. Install Stockfish
-brew install stockfish  # Mac
-# or download from https://stockfishchess.org/
-
-# 4. Start Redis (for background jobs)
-redis-server &
-
-# 5. Run the web app
-python -m src.web.app
-
-# 6. Open browser
-open http://localhost:5555
 ```
 
-## 📚 Documentation
+### 2. Infrastructure Setup
 
-- **[PRD.md](PRD.md)** - Product requirements and architecture
-- **[docs/WEB_UI_PLAN.md](docs/WEB_UI_PLAN.md)** - Web UI implementation roadmap
-- **[docs/CLEANUP_AUDIT.md](docs/CLEANUP_AUDIT.md)** - Code coverage analysis
-
-## 🧪 Testing
+Ensure Redis and Stockfish are installed and available in your path.
 
 ```bash
-# Run all tests
-pytest tests/ -v
+# MacOS
+brew install stockfish redis
 
-# Run with coverage
-pytest tests/ --cov=src --cov-report=html
-
-# View coverage report
-open htmlcov/index.html
+# Linux (Debian/Ubuntu)
+sudo apt-get install stockfish redis-server
 ```
 
-## 📊 Current Status
+### 3. Execution
 
-**Backend:** ✅ Complete
-- Game import, analysis, caching, background jobs
+Launch the required services:
 
-**Web UI:** ⚠️ 70% Complete
-- Dashboard, games list, game viewer, practice mode
-- Missing: Import UI, bulk analysis, opening detection
+```bash
+# Start the Message Broker
+redis-server &
 
-**Test Coverage:** 40%
-- Core algorithms: 96-98%
-- Need: Web app tests, worker tests
+# Start the Web Application
+python -m src.web.app
+```
 
-## 🛠️ Tech Stack
+Access the dashboard at `http://localhost:5555`.
 
-- **Backend:** Python, Flask, Stockfish, Redis, SQLite
-- **Frontend:** HTML/CSS/JavaScript (vanilla)
-- **Testing:** pytest, pre-commit hooks (Ruff)
-- **Deployment:** Local dev (Docker coming soon)
+## Documentation
 
-## 🎓 How It Works
+- **[Product Requirements (PRD)](PRD.md)**: Detailed feature specifications and product vision.
+- **[System Architecture](SYSTEM_ARCHITECTURE.md)**: Engineering design, data models, and component overview.
 
-1. **Import** your games from Chess.com/Lichess
-2. **Analyze** with Stockfish (background jobs)
-3. **Classify** moves using Win% algorithm
-4. **Practice** your mistakes interactively
-5. **Improve** based on data-driven insights!
+## Testing
 
-## 📈 Roadmap
+The project maintains a comprehensive test suite. Validation can be executed via `pytest`.
 
-See [docs/WEB_UI_PLAN.md](docs/WEB_UI_PLAN.md) for detailed roadmap.
+```bash
+# Execute test suite
+pytest tests/ -v
+```
 
-**Phase 1 (Week 1):** Browser-only workflow (import, analyze, export via UI)
-**Phase 2 (Week 2):** Opening detection + insights visualization
-**Phase 3 (Week 3):** Practice enhancements + gamification
+## Technology Stack
 
-## 🤝 Contributing
+- **Backend Framework**: Python Flask
+- **Analysis Engine**: Stockfish
+- **Data Persistence**: SQLite (Application Data), Redis (Task Queue)
+- **Frontend**: Vanilla JavaScript, Tailwind CSS
 
-1. Tests must pass: `pytest tests/`
-2. Coverage must not drop below 40%
-3. Pre-commit hooks will auto-format code (Ruff)
+## License
 
-## 📝 License
-
-MIT
-
----
-
-**Built with ❤️ for chess improvement**
+Licensed under the Apache License, Version 2.0. See [LICENSE](LICENSE) for more information.

@@ -1,88 +1,84 @@
-# Chess Improver - Product Requirements Document
+# Product Requirements Document
 
 **Last Updated:** January 28, 2026
-**Status:** Phase 4 Planning (Refinement & UI Overhaul)
+**Status:** Implementation Phase 4
 
-## 🎯 Vision
+## Vision
 
-**Chess Improver** is a self-hosted, UI-first web application for serious chess improvement. It empowers users to aggregate their game history from multiple platforms (Chess.com, Lichess), analyze it with professional-grade engines, and systematically eliminate mistakes through targeted, interactive practice.
+Chess Improver is a self-hosted, web-based platform designed to facilitate systematic chess improvement. It aggregates game history from external platforms (Chess.com, Lichess), analyzes gameplay using professional-grade engines, and generates targeted practice sessions based on identifiable performance gaps.
 
-**Core Philosophy:** "Everything in the UI." No command-line tools required for daily operation.
-
----
-
-## 🗺️ User Journey & Core Modules
-
-The application flow is designed to guide the user from data ingestion to actionable improvement.
-
-### 1. ⚙️ Settings & Onboarding
-*The entry point for new users.*
-- **Account Management**: Persistent storage of multiple Chess.com and Lichess usernames.
-- **Onboarding Nudge**: If no accounts are configured, a banner prompts the user to set them up immediately.
-- **Config Persistence**: All settings (engine depth, threads, themes) are saved to the database.
-
-### 2. 📊 Data Overview (The "Hub")
-*A clear, visual summary of the user's data state.*
-- **Activity Heatmap**: A "GitHub-style" contribution graph showing games played per day over the last year.
-    - **Color Coding**: Differentiate between *missing*, *imported*, and *analyzed* days.
-    - **Interactivity**: Clicking a date allows for immediate import/analysis of that range.
-- **Sync Status**: clear distinction between "Imported" and "Analyzed" games.
-- **Actionable Imports**: "Import New Games" buttons located directly next to linked accounts.
-- **Smart Analysis**: Ability to select specific ranges for analysis, with warnings if re-analyzing existing data.
-
-### 3. 📑 Games Overview
-*A powerful, spreadsheet-like interface for managing the game library.*
-- **Excel-like Experience**: High-density table view that fills the viewport.
-    - **Fixed Headers**: Sort and filter columns (Date, Opening, Result, Accuracy) without losing context.
-    - **Infinite Scroll/Pagination**: Handle thousands of games smoothly.
-- **Keyboard Navigation**: Move through rows with arrow keys.
-- **Customizable**: User can select how many rows to view per page.
-
-### 4. ♟️ Single Game Viewer
-*Distraction-free deep dive into a single game.*
-- **Single-Page Feel**: No scrolling required. The board, move list, and analysis pane fit perfectly within the viewport.
-- **Tabbed Sidebar**: "Moves" and "Analysis" are separated to keep the interface clean.
-- **Independent Scrolling**: Move list scrolls independently of the board/layout.
-- **Evaluation Bar**: Visual representation of the game's swing.
-
-### 5. 💥 "Blunder Buster" (Practice Mode)
-*The core training loop. Re-play your mistakes to learn.*
-- **Session Setup**:
-    - **Selectors**: Choose criteria: Color (White/Black), Phase (Opening/Mid/End), Severity (Blunder/Mistake).
-    - **Filters**: Recent games (last week/month) or specific dates.
-    - **Goal**: Set number of positions to solve (e.g., 20 moves).
-- **The Gameplay Loop**:
-    - **Progress Bar**: A row of boxes (Green=Correct, Red=Failed, Grey=Pending) showing session status at a glance.
-    - **Orientation**: Board **MUST** always flip to the player's perspective.
-    - **Context**: Animate the opponent's last move before passing control.
-    - **Retry Logic**:
-        - **Incorrect**: Board flashes red. Show the opponent's refutation (best engine response). User must retry until correct (but marked as "Failed").
-        - **Correct**: Board flashes green.
-        - **Hint**: Show piece to move (marks as failed).
-        - **Show Answer**: Draw arrow on board (marks as failed).
-    - **Forced Progression**: User explicitly clicks "Next Position" to review the board state before moving on.
-- **Session Summary**: After completion, show stats, accuracy, and time spent.
+The platform prioritizes a unified user interface, ensuring all workflows—from data ingestion to advanced analysis—are accessible without command-line intervention.
 
 ---
 
-## 🏗️ Technical Architecture
+## User Journey & Core Modules
 
-### Tech Stack
-- **Frontend**: Vanilla JS (ES6+) + Tailwind CSS. *Exploring lightweight frameworks (Alpine.js / Preact) for complex data tables if needed.*
-- **Backend**: Python Flask.
-- **Database**: SQLite + SQLAlchemy (Data consistency is paramount).
-- **Engine**: Stockfish 16+ via Python wrapper.
-- **Async Processing**: Redis + RQ for handling long-running analysis jobs without blocking the UI.
+The application architecture supports a linear flow from data acquisition to actionable improvement feedback.
 
-### Data Models (Refined)
-- **UserConfig**: Stores accounts and preferences.
-- **Game**: The central entity. Stores PGN, analysis status, and move-level accuracy metrics.
-- **Position**: Individual fen/move snapshots for practice.
-- **PracticeSession**: Logs of training runs (score, time, settings) to track improvement over time.
+### 1. Settings & Account Management
+This module serves as the primary configuration hub for the application.
+
+- **Account Aggregation**: Support for multiple account linkages across Chess.com and Lichess.
+- **Configuration Persistence**: Database-backed storage for user preferences, including engine parameters (depth, threads) and UI themes.
+- **Onboarding Workflow**: Automated prompts for initial account setup upon fresh installation.
+
+### 2. Data Hub
+The Data Hub provides a comprehensive visualization of user activity and system state.
+
+- **Activity Visualization**: A calendar-based heatmap displaying game frequency and analysis coverage over the trailing 12 months.
+- **Status Indicators**: Visual differentiation between imported raw data and fully analyzed games.
+- **Data Ingestion Controls**: Context-aware triggers for importing new game data from linked accounts.
+- **Analysis Management**: Controls for batch analysis of data ranges, with logic to prevent redundant processing.
+
+### 3. Game Library
+A high-density, tabular interface designed for efficient management of large datasets.
+
+- **Data Grid View**: A sortable, filterable table display maximizing information density.
+- **Navigation**: Keyboard-centric navigation support for rapid browsing.
+- **Performance**: Optimized rendering for datasets exceeding thousands of records.
+- **Customization**: User-configurable pagination and row density settings.
+
+### 4. Game Analysis View
+A focused interface for in-depth examination of individual games.
+
+- **Viewport Optimization**: Single-page layout eliminating the need for vertical scrolling during review.
+- **Information Architecture**: Tabbed separate of move lists and analytical data to reduce visual clutter.
+- **Evaluation Visualization**: Graphical representation of game advantage swings.
+
+### 5. Practice Mode ("Blunder Buster")
+The core training engine utilizing spaced repetition and mistake re-enforcement.
+
+- **Session Configuration**:
+    - **Criteria Selection**: Filtering by color, game phase (Opening/Middlegame/Endgame), and error severity.
+    - **Temporal Filters**: Scoping practice to recent games or specific date ranges.
+    - **Volume Control**: User-defined session length (e.g., 20 positions).
+- **Interaction Model**:
+    - **Perspective Enforcement**: Board orientation automatically aligns to the user's playing color.
+    - **Contextual Animation**: Replay of the opponent's final move prior to the tactical position.
+    - **Feedback Loop**: Visual indicators for correct/incorrect solutions with enforced retry logic.
+- **Progression**: Manual advancement controls to ensure user reflection on solved positions.
 
 ---
 
-## 🧪 Engineering Standards
-1.  **Test-Driven**: Logic for move classification, win% extraction, and practice positioning must be tested.
-2.  **Linting**: Strict `ruff` and `bandit` compliance.
-3.  **UI Verification**: Ensure board orientation and "Excel-like" behavior works across browsers.
+## Technical Architecture
+
+### Technology Stack
+- **Frontend**: Vanilla JavaScript (ES6+) with Tailwind CSS.
+- **Backend**: Python Flask framework.
+- **Database**: SQLite with SQLAlchemy ORM.
+- **Analysis Engine**: Stockfish (v16+) via Python integration.
+- **Task Queue**: Redis and RQ for asynchronous processing.
+
+### Data Models
+- **UserConfig**: Application-wide settings and credentials.
+- **Game**: Primary entity containing PGN data, analysis metrics, and move classifications.
+- **Position**: Derived tactical snapshots for practice mode.
+- **PracticeSession**: Telemetry data for tracking training performance over time.
+
+---
+
+## Engineering Standards
+
+1.  **Testing**: Comprehensive test coverage for all core logic, including move classification and win-probability algorithms.
+2.  **Code Quality**: Strict adherence to `ruff` linting and `bandit` security scanning standards.
+3.  **Cross-Browser Compatibility**: Verification of key UI components (Board orientation, Data Grids) across major browser engines.

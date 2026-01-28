@@ -1,140 +1,130 @@
 # System Architecture
 
 ## Overview
-Chess Improver is a locally hosted Flask application designed to analyze chess games and provide targeted training. It uses a decoupling strategy where the web server handles UI/API requests and background workers handle resource-intensive tasks (importing, analysis).
+Chess Improver is a locally hosted application designed for chess analysis and training. It employs a decoupled architecture where a Flask-based web server manages user interaction, while background workers handle resource-intensive asynchronous tasks such as data ingestion and engine analysis.
 
-## 📂 Directory Structure
+## Directory Structure
 
 ```
 src/
-├── analysis/           # core analysis logic
+├── analysis/           # Core analysis logic
 │   ├── engine.py       # Stockfish wrapper (StockfishAnalyzer)
-│   └── game_analyzer.py# Orchestrates game analysis (GameAnalyzer)
-├── database/           # Data layer
+│   └── game_analyzer.py# Game analysis orchestration (GameAnalyzer)
+├── database/           # Data persistence layer
 │   ├── models.py       # SQLAlchemy models (Game, Position, etc.)
-│   └── seed_openings.py# Utility to populate opening book
-├── web/                # Flask Web App
-│   ├── static/         # CSS, JS, Images
+│   └── seed_openings.py# Utility for population of opening book data
+├── web/                # Presentation layer
+│   ├── static/         # Usage assets (CSS, JS, Images)
 │   ├── templates/      # Jinja2 HTML templates
-│   └── app.py          # Main application entry point & API routes
-└── workers/            # Background Tasks
+│   └── app.py          # Application entry point and API definition
+└── workers/            # Asynchronous Task Runners
     ├── analyzer_worker.py # Task runner for game analysis
-    └── import_worker.py   # Task runner for fetching games
+    └── import_worker.py   # Task runner for data ingestion
 ```
 
-## 🔄 Data Architecture
+## Data Architecture
 
-### Database (SQLite)
-The application uses a single SQLite database (`chess_improver.db`) managed via SQLAlchemy.
+### Database
+The application utilizes a single SQLite database (`chess_improver.db`) managed via the SQLAlchemy ORM.
 
-**Key Models:**
-- **`Game`**: Stores raw PGN, metadata (players, result), and analysis results (accuracy, move classifications).
-- **`Position`**: Represents a specific moment in a game (FEN) identified as a mistake or blunder. Used for practice.
-- **`PracticeSession`**: Logs user practice runs, scores, and settings.
-- **`UserConfig`**: Key-value store for settings (usernames, engine depth).
+**Core Entities:**
+- **`Game`**: Stores raw PGN data, player metadata, and analysis results (accuracy metrics, move classifications).
+- **`Position`**: Represents specific game states identified as tactical opportunities or errors. These form the basis of the training module.
+- **`PracticeSession`**: Records telemetry from user training sessions to track improvement over time.
+- **`UserConfig`**: Key-value storage for application configuration and user preferences.
 
-### Background Processing (Redis + RQ)
-Analysis is CPU-intensive. We use Redis and RQ (Redis Queue) to offload these tasks.
-1.  **Import**: `import_worker.py` fetches games from APIs and saves to DB.
-2.  **Analysis**: `app.py` queues jobs; `analyzer_worker.py` picks them up, spins up Stockfish, and updates the `Game` and `Position` tables.
+### Async Processing
+To ensure interface responsiveness, CPU-intensive operations are offloaded using Redis and RQ (Redis Queue).
+1.  **Ingestion**: `import_worker.py` interfaces with external APIs to retrieve game data.
+2.  **Analysis**: `analyzer_worker.py` executes the Stockfish engine to process games and update the database with analytical insights.
 
-## 🧠 Core Analysis Engine
+## Analysis Engine
 
 **`StockfishAnalyzer` (`src/analysis/engine.py`)**
-- Wraps the Stockfish binary.
-- Provides `analyze_position()` returning score (cp/mate) and best move.
-- Handles UCI communication.
+- Encapsulates the Stockfish binary interaction.
+- Provides a standardized interface for position evaluation (centipawn/mate scores) and best-move determination.
+- Manages UCI (Universal Chess Interface) communication protocols.
 
 **`GameAnalyzer` (`src/analysis/game_analyzer.py`)**
-- Iterates through moves of a game.
-- Calculates Win% chances based on centipawn loss (Lichess-style logic).
-- Classifies moves (Brilliant, Best, Good, Mistake, Blunder) based on Win% swing.
-- Populates the `Position` table with puzzles generated from mistakes.
+- Orchestrates the sequential analysis of game moves.
+- Calculates Win Probability using centipawn loss logic similar to platforms like Lichess.
+- Classifies moves (e.g., Brilliant, Mistake, Blunder) based on significant shifts in win probability.
+- Generates `Position` records for detected errors to populate the training database.
 
-## 🎨 Frontend Architecture
+## Frontend Architecture
 
-**Tech Stack**: Server-Side Rendered (SSR) HTML via Jinja2 + Vanilla JavaScript + Tailwind CSS.
+**Technology Stack**: Server-Side Rendered (SSR) HTML via Jinja2, utilizing Vanilla JavaScript and Tailwind CSS for client-side interactivity and styling.
 
-**Key Pages:**
-- **Dashboard (`dashboard.html`)**: High-level stats.
-- **Game Viewer (`game_viewer.html`)**:
-    - Uses `chessboard.js` for the board.
-    - `chess.js` for move validation and logic.
-    - Tabbed Sidebar for Moves vs. Analysis.
-- **Practice Mode (`practice.html`)**:
-    - AJAX-heavy page for interactive training.
-    - Client-side logic handles move validation against the stored solution.
-    - **Board Orientation**: Explicitly handled to ensure user perspective (flipped for Black).
+**Key Interfaces:**
+- **Dashboard**: High-level statistical reconfiguration and status monitoring.
+- **Game Viewer**:
+    - Integrates `chessboard.js` for board visualization.
+    - Utilizes `chess.js` for client-side move validation.
+    - Implements a tabbed interface for move history and analytical data.
+- **Practice Mode**:
+    - Interactive training interface dependent on AJAX for state management.
+    - Client-side validation compares user input against stored engine solutions.
+    - Enforces correct board orientation based on the user's playing color.
 
-## 🚀 Execution Flow
-
-1.  **User Visits Site**: Flask serves `dashboard.html`.
-2.  **Import Trigger**: User requests sync -> API enqueues job -> Worker fetches PGNs -> DB updated.
-3.  **Analysis Trigger**: User clicks "Analyze" -> API enqueues job -> Worker runs Stockfish -> DB updated with accuracy/mistakes.
-4.  **Practice**: User starts session -> API queries loose `Position` records -> Frontend guides user through puzzles.
-
-## 🛠️ Development Setup
+## Development Setup
 
 - **Language**: Python 3.11+
-- **Dependency Manager**: `uv` or `pip`.
-- **Database**: SQLite (auto-created).
-- **Redis**: Must be running for background tasks.
-- **Env Vars**: `FLASK_APP=src/web/app.py`, `FLASK_DEBUG=1`.
+- **Dependency Management**: `uv` or `pip`
+- **Database**: SQLite (auto-provisioned)
+- **Message Broker**: Redis
+- **Environment**: `FLASK_APP=src/web/app.py`, `FLASK_DEBUG=1`
 
 ---
 
-## 🛡️ Engineering Standards
+## Engineering Standards
 
-We adhere to strict quality controls to ensure robustness and maintainability.
+The project maintains strict quality controls to ensure codebase robustness and maintainability.
 
 ### Code Quality & Formatting
-*Tools used via `ruff` and `pre-commit`*
+*Enforced via `ruff` and `pre-commit`*
 
-- **Linter**: `ruff` (configured in `pyproject.toml`) handles Python linting (replacing flake8/isort).
-- **Formatter**: `ruff-format` ensures consistent style (replacing Black).
-- **Security**: `bandit` scans for common security vulnerabilities (e.g., hardcoded passwords, unsafe exec).
+- **Linting**: `ruff` handles Python linting.
+- **Formatting**: `ruff-format` ensures consistent code style.
+- **Security**: `bandit` performs static analysis for common security vulnerabilities.
 
 ### Pre-commit Hooks
-The repo uses pre-commit hooks to enforce standards before code enters the repo.
-**Config**: `.pre-commit-config.yaml`
-**Hooks Run:**
-1.  **Trailing Whitespace / End of File**: Basic cleanup.
-2.  **Large File Check**: Prevents committing binaries > 1MB.
-3.  **Ruff**: Lints and formats code.
-4.  **Bandit**: Security audit.
-5.  **Pytest Coverage**: **(Push Only)** prevents pushing code if coverage drops below 40%.
+The repository employs pre-commit hooks to validate code integrity prior to ingestion.
+**Configuration**: `.pre-commit-config.yaml`
+**Active Checks:**
+1.  **File Integrity**: Trailing whitespace and end-of-file validation.
+2.  **Size Constraints**: Prevention of large binary commits (>1MB).
+3.  **Static Analysis**: Execution of Ruff linting and formatting.
+4.  **Security Audit**: Execution of Bandit security checks.
+5.  **Test Coverage**: (Push Only) Verifies test coverage meets minimum thresholds.
 
-### 🧪 Testing Strategy
+### Testing Strategy
 
-Tests are located in `tests/` and run via `pytest`.
+Tests are maintained in the `tests/` directory and executed via `pytest`.
 
-**Key Test Suites:**
-- **`tests/test_integration.py`**: End-to-end flows (sync -> analyze -> result).
-- **`tests/test_practice_mode.py`**: Verifies puzzle generation and board orientation logic.
-- **`tests/test_win_chance.py`**: Core algorithm verification for move classification.
-- **`tests/test_golden_chesscom.py`**: Verification against "golden" reference games to ensure analytical accuracy.
+**Key Suites:**
+- **`tests/test_integration.py`**: End-to-end workflow validation (Sync -> Analyze -> Result).
+- **`tests/test_practice_mode.py`**: Verification of puzzle generation and orientation logic.
+- **`tests/test_move_classifier.py`**: Validation of core move classification algorithms.
+- **`tests/test_golden_chesscom.py`**: Benchmarking against reference datasets to ensure analytical accuracy.
 
-**Run Tests:**
+**Execution:**
 ```bash
 # Run all tests
 pytest
 
 # Run with coverage report
 pytest --cov=src
-
-# Watch mode (recommended during dev)
-ptw
 ```
 
-## 👩‍💻 Developer Onboarding
+## Developer Onboarding
 
 ### 1. Environment Setup
 ```bash
-# 1. Clone & Enter
+# 1. Clone Repository
 git clone <repo_url>
 cd chess-improver
 
-# 2. Create Virtual Env (Recommended with uv or python)
+# 2. Create Virtual Environment
 python -m venv venv
 source venv/bin/activate
 
@@ -146,14 +136,14 @@ pip install -r requirements-dev.txt
 pre-commit install
 ```
 
-### 2. Running the App
-The app requires Redis for background workers.
+### 2. Application Execution
+The application requires Redis for background task processing.
 
 ```bash
-# Terminal 1: Redis
+# Terminal 1: Message Broker
 redis-server
 
-# Terminal 2: Worker (Process Analysis)
+# Terminal 2: Analysis Worker
 export PYTHONPATH=$PYTHONPATH:$(pwd)
 python src/workers/analyzer_worker.py
 
@@ -162,10 +152,3 @@ export FLASK_APP=src/web/app.py
 export FLASK_DEBUG=1
 flask run --port 5001
 ```
-
-### 3. Making Changes
-1.  Create a branch for your feature.
-2.  Write tests in `tests/` confirming the desired behavior.
-3.  Implement changes.
-4.  Run `pytest` to ensure no regressions.
-5.  Commit (Pre-commit hooks will auto-fix formatting).
