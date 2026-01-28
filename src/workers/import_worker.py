@@ -4,6 +4,7 @@ from datetime import datetime
 
 import chess.pgn
 import requests
+from rq import get_current_job
 
 from src.database.models import Game, get_session
 
@@ -19,9 +20,6 @@ def parse_pgn_date(pgn_headers):
         return datetime.strptime(dt_str, "%Y.%m.%d %H:%M:%S")
     except ValueError:
         return datetime.utcnow()
-
-
-from rq import get_current_job
 
 
 def sync_games_task(platform, username):
@@ -203,7 +201,7 @@ def sync_lichess(session, username, job=None):
     try:
         resp = requests.get(url, params={"max": 50}, timeout=30)
         pgn_data = resp.text
-    except:
+    except Exception:
         return 0
 
     pgn_io = io.StringIO(pgn_data)

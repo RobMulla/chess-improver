@@ -4,12 +4,12 @@ from collections import Counter
 
 html_file = "/Users/robmulla/Repos/chess-improver/tests/chess_dot_com_analysis_example/RobM83 vs. JosePater30 _ Analysis - Chess.com.html"
 
-with open(html_file, 'r', encoding='utf-8') as f:
+with open(html_file, encoding="utf-8") as f:
     html = f.read()
 
 # Find all move classifications in the HTML
 # Chess.com uses classes like "move-best", "move-excellent", etc.
-pattern = r'move-(best|excellent|good|great|brilliant|inaccuracy|mistake|blunder|book)'
+pattern = r"move-(best|excellent|good|great|brilliant|inaccuracy|mistake|blunder|book)"
 matches = re.findall(pattern, html, re.IGNORECASE)
 
 print("🔍 Chess.com Move-by-Move Classifications\n")

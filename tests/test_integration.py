@@ -1,12 +1,8 @@
 """Integration tests for game analysis pipeline."""
-import os
-import sys
-
-import pytest
-
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from datetime import datetime
+
+import pytest
 
 from src.analysis.game_analyzer import GameAnalyzer
 from src.database.models import Game, get_session

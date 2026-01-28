@@ -1,10 +1,6 @@
 """Tests for win chance calculations."""
-import os
-import sys
 
 import pytest
-
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from src.analysis.win_chance import (
     calculate_accuracy_from_win_losses,

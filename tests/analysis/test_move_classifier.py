@@ -1,12 +1,7 @@
-"""Additional tests for Phase 1 features: cache, jobs, classification."""
-import os
-import sys
+"""Tests for MoveClassifier."""
+import chess
 
-import pytest
-
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
-
-from src.analysis.move_classifier import MoveClassifier  # noqa: E402
+from src.analysis.move_classifier import MoveClassifier
 
 
 class TestMoveClassificationThresholds:
@@ -67,7 +62,20 @@ class TestMoveClassificationThresholds:
         )
         assert result["classification"] == "blunder"
         assert result["is_blunder"] is True
-        # Win% loss should be significant (going from ~59% to ~25% = ~34% loss)
+
+    def test_classify_move_brilliant_placeholder(self):
+        """Test brilliant move classification - currently not implemented, should be 'great'."""
+        result = MoveClassifier.classify_move(prev_eval=100, curr_eval=500, is_white_turn=True)
+        # Brilliant not implemented yet, should be "best"
+        # Since eval improved or match, it is at least good
+        assert result["classification"] in ["great", "best"]
+        assert result["is_mistake"] is False
+
+    def test_classify_move_best_simple(self):
+        """Test best move classification."""
+        result = MoveClassifier.classify_move(prev_eval=0, curr_eval=100, is_white_turn=True)
+        assert result["classification"] == "best"
+        assert result["is_mistake"] is False
 
 
 class TestGamePhaseDetection:
@@ -75,7 +83,7 @@ class TestGamePhaseDetection:
 
     def test_starting_position_is_opening(self):
         """Test starting position detected as opening."""
-        fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+        fen = chess.STARTING_FEN  # Use chess constant if available or string
         phase = MoveClassifier.classify_game_phase(fen, 1)
         assert phase == "opening"
 
@@ -97,6 +105,20 @@ class TestGamePhaseDetection:
         phase = MoveClassifier.classify_game_phase(fen, 8)
         # Has queens, many pieces, should be middlegame
         assert phase in ["middlegame", "opening"]
+
+    def test_classify_game_phase_opening(self):
+        """Test opening phase detection (legacy)."""
+        # Starting position with most pieces
+        fen = "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1"
+        phase = MoveClassifier.classify_game_phase(fen, 1)
+        assert phase == "opening"
+
+    def test_classify_middlegame_legacy(self):
+        """Test middlegame detection (legacy)."""
+        # Queens still on, some pieces exchanged
+        fen = "r1bqkb1r/pppp1ppp/2n2n2/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 0 1"
+        phase = MoveClassifier.classify_game_phase(fen, 8)
+        assert phase in ["opening", "middlegame"]
 
 
 class TestAccuracyCalculation:
@@ -125,30 +147,3 @@ class TestAccuracyCalculation:
         )
         accuracy = MoveClassifier.calculate_accuracy_from_moves(classifications)
         assert 90.0 < accuracy < 96.0  # Mixed moves should be high-90s
-
-
-def run_tests():
-    """Run all tests."""
-    print("🧪 Running Extended Test Suite...\n")
-
-    exit_code = pytest.main(
-        [
-            __file__,
-            "-v",
-            "-s",
-            "--tb=short",
-            "-k",
-            "not test_queue_import",  # Skip if Redis not running
-        ]
-    )
-
-    if exit_code == 0:
-        print("\n✅ All tests passed!")
-    else:
-        print(f"\n❌ Some tests failed (exit code {exit_code})")
-
-    return exit_code
-
-
-if __name__ == "__main__":
-    run_tests()

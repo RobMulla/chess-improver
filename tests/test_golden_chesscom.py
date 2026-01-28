@@ -1,23 +1,22 @@
 """Golden test: Compare our analysis to Chess.com's for game 148322637444."""
-import sys
-import os
-sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
-from src.database.models import get_session, Game
+import sys
+
 from src.analysis.game_analyzer import GameAnalyzer
+from src.database.models import Game, get_session
 
 # Chess.com's analysis results for RobM83 in this game
 EXPECTED_RESULTS = {
-    'accuracy': 87.6,
-    'brilliant': 0,
-    'great': 1,
-    'best': 30,
-    'excellent': 27,
-    'good': 8,
-    'inaccuracy': 1,
-    'mistake': 0,
-    'miss': 2,
-    'blunder': 0
+    "accuracy": 87.6,
+    "brilliant": 0,
+    "great": 1,
+    "best": 30,
+    "excellent": 27,
+    "good": 8,
+    "inaccuracy": 1,
+    "mistake": 0,
+    "miss": 2,
+    "blunder": 0,
 }
 
 print("🎯 Golden Test: Chess.com Game 148322637444")
@@ -35,7 +34,7 @@ print(f"  Blunder: {EXPECTED_RESULTS['blunder']}")
 
 # Get the game from database
 session = get_session()
-game = session.query(Game).filter_by(game_id='148322637444').first()
+game = session.query(Game).filter_by(game_id="148322637444").first()
 
 if not game:
     print("\n❌ Game not found in database!")
@@ -59,10 +58,10 @@ print("\n" + "=" * 60)
 print("Our Analysis vs Chess.com:")
 print("=" * 60)
 
-our_accuracy = result['player_accuracy']
-accuracy_diff = abs(our_accuracy - EXPECTED_RESULTS['accuracy'])
+our_accuracy = result["player_accuracy"]
+accuracy_diff = abs(our_accuracy - EXPECTED_RESULTS["accuracy"])
 
-print(f"\n📊 Accuracy:")
+print("\n📊 Accuracy:")
 print(f"  Chess.com: {EXPECTED_RESULTS['accuracy']}%")
 print(f"  Our tool:  {our_accuracy:.1f}%")
 print(f"  Difference: {accuracy_diff:.1f}%")
@@ -72,24 +71,24 @@ if accuracy_diff <= 5.0:
 else:
     print(f"  ❌ MISMATCH (off by {accuracy_diff:.1f}%)")
 
-print(f"\n📈 Move Classifications:")
+print("\n📈 Move Classifications:")
 print(f"{'Category':<12} {'Chess.com':<10} {'Our Tool':<10} {'Status'}")
 print("-" * 45)
 
-categories = ['brilliant', 'great', 'best', 'excellent', 'good', 'inaccuracy', 'mistake', 'blunder']
+categories = ["brilliant", "great", "best", "excellent", "good", "inaccuracy", "mistake", "blunder"]
 total_diff = 0
 
 for cat in categories:
     expected = EXPECTED_RESULTS[cat]
-    actual = result['move_counts'].get(cat, 0)
+    actual = result["move_counts"].get(cat, 0)
     diff = abs(expected - actual)
     total_diff += diff
-    
+
     status = "✅" if diff <= 2 else "❌"
     print(f"{cat:<12} {expected:<10} {actual:<10} {status}")
 
 # Handle "miss" separately (we don't have this category)
-miss_expected = EXPECTED_RESULTS['miss']
+miss_expected = EXPECTED_RESULTS["miss"]
 print(f"{'miss':<12} {miss_expected:<10} {'N/A':<10} ⚠️ (not implemented)")
 
 print("\n" + "=" * 60)

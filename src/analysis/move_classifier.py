@@ -138,7 +138,6 @@ class MoveClassifier:
         # 1. No queens on board (Queenless middlegame/endgame)
         # 2. Very low material (e.g. < 20 points total excluding kings)
         no_queens = white_queens == 0 and black_queens == 0
-        low_material = total_material < 30  # Approx 2 Rooks + 2 Minors + Pawns
 
         # Strict endgame: No queens OR material < 24
         if no_queens or total_material < 24:
