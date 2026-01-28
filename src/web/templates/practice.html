@@ -145,16 +145,25 @@
                     <div>
                         <div class="card" style="margin-bottom: 1.5rem;">
                             <h3 style="margin-bottom: 1rem;">Position Context</h3>
-                            <div style="font-size: 0.875rem; color: var(--text-muted); line-height: 1.8;">
-                                <div><strong>Game:</strong> <span id="ctx-game">-</span></div>
-                                <div><strong>Date:</strong> <span id="ctx-date">-</span></div>
-                                <div><strong>Players:</strong> <span id="ctx-players">-</span></div>
-                                <div><strong>Result:</strong> <span id="ctx-result">-</span></div>
-                                <div><strong>Opening:</strong> <span id="ctx-opening">-</span></div>
-                                <div><strong>Phase:</strong> <span id="ctx-phase">-</span></div>
-                                <div><strong>Mistake:</strong> <span id="ctx-eval-drop"
-                                        style="color: var(--error); font-weight: bold;">-</span></div>
-                                <div><strong>Move:</strong> <span id="ctx-move">-</span></div>
+                            <div id="ctx-blurred" style="position: relative;">
+                                <div id="ctx-content"
+                                    style="font-size: 0.875rem; color: var(--text-muted); line-height: 1.8; filter: blur(5px); transition: filter 0.3s;">
+                                    <div><strong>Game:</strong> <span id="ctx-game">-</span></div>
+                                    <div><strong>Date:</strong> <span id="ctx-date">-</span></div>
+                                    <div><strong>Players:</strong> <span id="ctx-players">-</span></div>
+                                    <div><strong>Result:</strong> <span id="ctx-result">-</span></div>
+                                    <div><strong>Opening:</strong> <span id="ctx-opening">-</span></div>
+                                    <div><strong>Phase:</strong> <span id="ctx-phase">-</span></div>
+                                    <div><strong>Mistake:</strong> <span id="ctx-eval-drop"
+                                            style="color: var(--error); font-weight: bold;">-</span></div>
+                                    <div><strong>Move:</strong> <span id="ctx-move">-</span></div>
+                                </div>
+                                <div id="ctx-reveal-overlay"
+                                    style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.1); border-radius: 4px; pointer-events: none;">
+                                    <span
+                                        style="font-size: 0.75rem; font-weight: 600; color: var(--text-primary); background: var(--bg-tertiary); padding: 4px 8px; border-radius: 4px;">REVEALED
+                                        AFTER SOLVING</span>
+                                </div>
                             </div>
                         </div>
 
@@ -366,6 +375,11 @@
             document.getElementById('next-btn').style.display = 'none';
             document.getElementById('show-btn').style.display = 'inline-block';
             document.getElementById('hint-btn').style.display = 'inline-block';
+
+            // Hide context until solved
+            document.getElementById('ctx-content').style.filter = 'blur(5px)';
+            document.getElementById('ctx-reveal-overlay').style.display = 'flex';
+
             clearHighlights();
             clearArrows();
             currentAttempt = null;
@@ -436,8 +450,7 @@
             // Position must be at the latest state to move
             if (currentHistoryIndex !== historyFens.length - 1) return false;
 
-            const pos = practicePositions[currentIndex];
-            const turn = pos.game.player_color === 'white' ? 'w' : 'b';
+            const turn = game.turn();
             if (piece.search(new RegExp(`^${turn}`)) === -1) return false;
 
             if (document.getElementById('next-btn').style.display !== 'none' && !isPlayMode) return false;
@@ -523,6 +536,7 @@
                 feedbackPanel.innerHTML = '<strong>✓ Correct!</strong> That was the best move.';
 
                 drawSolutionArrow(pos.best_move);
+                revealContext();
             } else {
                 hasFailedThisPosition = true;
 
@@ -578,6 +592,12 @@
             document.getElementById('continue-btn').style.display = 'inline-block';
 
             drawSolutionArrow(pos.best_move);
+            revealContext();
+        }
+
+        function revealContext() {
+            document.getElementById('ctx-content').style.filter = 'none';
+            document.getElementById('ctx-reveal-overlay').style.display = 'none';
         }
 
         function clearHighlights() {
@@ -628,12 +648,12 @@
             const svg = `
                 <svg id="arrow-container" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 10;">
                     <defs>
-                        <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="8" refY="3.5" orient="auto">
-                            <polygon points="0 0, 10 3.5, 0 7" fill="#26c281" opacity="0.8" />
+                        <marker id="arrowhead" markerWidth="6" markerHeight="4" refX="5" refY="2" orient="auto">
+                            <polygon points="0 0, 6 2, 0 4" fill="#26c281" opacity="0.8" />
                         </marker>
                     </defs>
                     <line x1="${start.x}" y1="${start.y}" x2="${end.x}" y2="${end.y}"
-                        stroke="#26c281" stroke-width="12" stroke-linecap="round"
+                        stroke="#26c281" stroke-width="8" stroke-linecap="round"
                         opacity="0.6" marker-end="url(#arrowhead)" />
                 </svg>
             `;
