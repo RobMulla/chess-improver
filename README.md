@@ -78,7 +78,7 @@ pytest tests/ -v
 | **Engine Analysis** | Server-side analysis using Stockfish 16+. | Full Support |
 | **Move Classification** | Algorithmic detection of Brilliances, Mistakes, and Blunders. | Full Support |
 | **Practice Mode** | Interactive replay of tactical errors from your own games. | Full Support |
-| **Data Visualization** | Heatmaps and trend analysis for long-term improvement tracking. | Partial |
+| **Data Visualization** | Activity heatmaps and trend analysis for long-term improvement tracking. | Full Support |
 | **Bulk Processing** | Asynchronous queuing for heavy analysis workloads. | Full Support |
 
 ## License

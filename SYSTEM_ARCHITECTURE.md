@@ -94,8 +94,10 @@ The repository employs pre-commit hooks to validate code integrity prior to inge
 1.  **File Integrity**: Trailing whitespace and end-of-file validation.
 2.  **Size Constraints**: Prevention of large binary commits (>1MB).
 3.  **Static Analysis**: Execution of Ruff linting and formatting.
-4.  **Security Audit**: Execution of Bandit security checks.
-5.  **Test Coverage**: (Push Only) Verifies test coverage meets minimum thresholds.
+4.  **HTML Linting**: djLint validation (auto-formatting disabled to preserve Jinja2 syntax).
+5.  **Template Syntax**: Jinja2 template validation to catch syntax errors before commit.
+6.  **Security Audit**: Execution of Bandit security checks.
+7.  **Test Coverage**: (Push Only) Verifies test coverage meets minimum thresholds.
 
 ### Testing Strategy
 
@@ -105,6 +107,7 @@ Tests are maintained in the `tests/` directory and executed via `pytest`.
 - **`tests/test_integration.py`**: End-to-end workflow validation (Sync -> Analyze -> Result).
 - **`tests/test_practice_mode.py`**: Verification of puzzle generation and orientation logic.
 - **`tests/test_move_classifier.py`**: Validation of core move classification algorithms.
+- **`tests/test_templates.py`**: Jinja2 template syntax validation across all HTML files.
 - **`tests/test_golden_chesscom.py`**: Benchmarking against reference datasets to ensure analytical accuracy.
 
 **Execution:**
