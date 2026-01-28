@@ -401,7 +401,8 @@
             document.getElementById('ctx-move').textContent = `Move ${pos.move_number}`;
 
             // Board Orientation
-            const orientation = pos.game.player_color === 'black' ? 'black' : 'white';
+            const pColor = (pos.game.player_color || 'white').toLowerCase();
+            const orientation = pColor === 'black' ? 'black' : 'white';
 
             // Setup board
             if (!board) {
@@ -426,10 +427,12 @@
                 board.orientation(orientation);
             }
 
-            // Always ensure board orientation is correct, sometimes the init doesn't stick
-            if (board.orientation() !== orientation) {
-                board.orientation(orientation);
-            }
+            // High-reliability orientation check: ensure redraw
+            setTimeout(() => {
+                if (board.orientation() !== orientation) {
+                    board.orientation(orientation);
+                }
+            }, 50);
 
             // Show start position if history exists, then animate the last move
             if (historyFens.length > 1) {
