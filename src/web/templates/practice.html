@@ -107,7 +107,15 @@
                                     <span id="score-text" style="margin-left: 1rem; color: var(--text-muted);">Score:
                                         0/0</span>
                                 </div>
-                                <button class="btn btn-secondary btn-sm" onclick="endPractice()">End Session</button>
+                                <div style="text-align: right;">
+                                    <span id="player-color-hint" class="badge"
+                                        style="margin-bottom: 0.5rem; display: inline-block;"></span>
+                                    <br>
+                                    <button class="btn btn-secondary btn-sm" onclick="board.flip()"
+                                        title="Flip Board"><i class="fas fa-sync"></i> Swap View</button>
+                                    <button class="btn btn-secondary btn-sm" onclick="endPractice()">End
+                                        Session</button>
+                                </div>
                             </div>
                         </div>
 
@@ -404,6 +412,15 @@
             const pColor = (pos.game.player_color || 'white').toLowerCase();
             const orientation = pColor === 'black' ? 'black' : 'white';
 
+            // Update color hint
+            const hintEl = document.getElementById('player-color-hint');
+            if (hintEl) {
+                hintEl.textContent = `Playing as ${pColor.toUpperCase()}`;
+                hintEl.style.background = pColor === 'white' ? '#f8f9fa' : '#343a40';
+                hintEl.style.color = pColor === 'white' ? '#212529' : '#f8f9fa';
+                hintEl.style.border = '1px solid var(--border-subtle)';
+            }
+
             // Setup board
             if (!board) {
                 board = Chessboard('practice-board', {
@@ -427,12 +444,10 @@
                 board.orientation(orientation);
             }
 
-            // High-reliability orientation check: ensure redraw
-            setTimeout(() => {
-                if (board.orientation() !== orientation) {
-                    board.orientation(orientation);
-                }
-            }, 50);
+            // High-reliability orientation check: ensure redraw and orientation stick
+            setTimeout(() => { if (board) board.orientation(orientation); }, 50);
+            setTimeout(() => { if (board) board.orientation(orientation); }, 250);
+            setTimeout(() => { if (board) board.orientation(orientation); }, 1000);
 
             // Show start position if history exists, then animate the last move
             if (historyFens.length > 1) {
