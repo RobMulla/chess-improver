@@ -72,6 +72,17 @@ class Game(Base):
     miss_moves = Column(Integer, default=0)
     blunder_moves = Column(Integer, default=0)
 
+    # Opponent Move classification counts
+    opponent_brilliant_moves = Column(Integer, default=0)
+    opponent_great_moves = Column(Integer, default=0)
+    opponent_best_moves = Column(Integer, default=0)
+    opponent_excellent_moves = Column(Integer, default=0)
+    opponent_good_moves = Column(Integer, default=0)
+    opponent_inaccuracy_moves = Column(Integer, default=0)
+    opponent_mistake_moves = Column(Integer, default=0)
+    opponent_miss_moves = Column(Integer, default=0)
+    opponent_blunder_moves = Column(Integer, default=0)
+
     # Relationships
     positions = relationship("Position", back_populates="game", cascade="all, delete-orphan")
 

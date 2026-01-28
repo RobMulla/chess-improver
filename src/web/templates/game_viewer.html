@@ -274,13 +274,68 @@
                                 </div>
                             </div>
 
-                            <!-- Opponent Stats (Placeholder) -->
-                            <div style="opacity: 0.5; pointer-events: none;">
+                            <!-- Opponent Stats -->
+                            <div>
                                 <h4 class="text-muted"
                                     style="margin-bottom: 0.5rem; font-size: 0.75rem; text-transform: uppercase;">
-                                    Opponent</h4>
-                                <div class="text-muted" style="font-size: 0.8rem; font-style: italic;">
-                                    Opponent analysis coming soon...
+                                    Opponent ({{ ('white' if game.player_color == 'black' else 'black')|capitalize }})
+                                </h4>
+                                <div class="move-quality-grid">
+                                    {% if game.opponent_brilliant_moves %}
+                                    <div class="move-quality-item">
+                                        <span><span style="color: #26c281">!!</span> Brilliant</span>
+                                        <strong>{{ game.opponent_brilliant_moves }}</strong>
+                                    </div>
+                                    {% endif %}
+                                    {% if game.opponent_great_moves %}
+                                    <div class="move-quality-item">
+                                        <span><span style="color: #55b0de">!</span> Great</span>
+                                        <strong>{{ game.opponent_great_moves }}</strong>
+                                    </div>
+                                    {% endif %}
+                                    {% if game.opponent_best_moves %}
+                                    <div class="move-quality-item">
+                                        <span><span style="color: #90be6d">★</span> Best</span>
+                                        <strong>{{ game.opponent_best_moves }}</strong>
+                                    </div>
+                                    {% endif %}
+                                    {% if game.opponent_excellent_moves %}
+                                    <div class="move-quality-item">
+                                        <span><span style="color: #90be6d">✓</span> Excellent</span>
+                                        <strong>{{ game.opponent_excellent_moves }}</strong>
+                                    </div>
+                                    {% endif %}
+                                    {% if game.opponent_good_moves %}
+                                    <div class="move-quality-item">
+                                        <span><span style="color: #94a3b8">✓</span> Good</span>
+                                        <strong>{{ game.opponent_good_moves }}</strong>
+                                    </div>
+                                    {% endif %}
+
+                                    {% if game.opponent_inaccuracy_moves %}
+                                    <div class="move-quality-item" style="margin-top: 0.5rem;">
+                                        <span><span style="color: #facc15">?!</span> Inaccuracy</span>
+                                        <strong>{{ game.opponent_inaccuracy_moves }}</strong>
+                                    </div>
+                                    {% endif %}
+                                    {% if game.opponent_mistake_moves %}
+                                    <div class="move-quality-item">
+                                        <span><span style="color: #fb923c">?</span> Mistake</span>
+                                        <strong>{{ game.opponent_mistake_moves }}</strong>
+                                    </div>
+                                    {% endif %}
+                                    {% if game.opponent_blunder_moves %}
+                                    <div class="move-quality-item">
+                                        <span><span style="color: #dc2626">??</span> Blunder</span>
+                                        <strong>{{ game.opponent_blunder_moves }}</strong>
+                                    </div>
+                                    {% endif %}
+
+                                    {% if not game.analyzed %}
+                                    <div class="text-muted" style="font-size: 0.8rem; font-style: italic;">
+                                        Analyze game to see quality...
+                                    </div>
+                                    {% endif %}
                                 </div>
                             </div>
                         </div>
@@ -294,15 +349,18 @@
                             style="padding: 1rem; margin-bottom: 0; border-bottom: 1px solid var(--border-subtle);">
                             <h3 class="card-title">Moves</h3>
                         </div>
-                        <div class="move-table-container" style="flex: 1; overflow-y: auto;">
+                        <div class="move-table-container"
+                            style="flex: 1; overflow-y: auto; max-height: 500px; min-height: 200px;">
                             <table class="moves-table" style="width: 100%; border-collapse: collapse;">
                                 <thead>
                                     <tr style="background: var(--bg-tertiary); position: sticky; top: 0; z-index: 1;">
                                         <th
-                                            style="padding: 0.5rem; text-align: center; width: 40px; color: var(--text-muted);">
+                                            style="padding: 0.5rem; text-align: center; width: 40px; color: var(--text-muted); background: var(--bg-tertiary);">
                                             #</th>
-                                        <th style="padding: 0.5rem; text-align: left;">White</th>
-                                        <th style="padding: 0.5rem; text-align: left;">Black</th>
+                                        <th style="padding: 0.5rem; text-align: left; background: var(--bg-tertiary);">
+                                            White</th>
+                                        <th style="padding: 0.5rem; text-align: left; background: var(--bg-tertiary);">
+                                            Black</th>
                                     </tr>
                                 </thead>
                                 <tbody id="move-list-body">

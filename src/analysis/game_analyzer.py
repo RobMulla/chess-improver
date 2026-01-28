@@ -2,7 +2,6 @@
 
 from datetime import datetime
 from io import StringIO
-from typing import Optional
 
 import chess
 import chess.pgn
@@ -14,7 +13,7 @@ from src.database.models import Game, Position, get_session
 class GameAnalyzer:
     """Analyze chess games with Stockfish."""
 
-    def __init__(self, stockfish_path: Optional[str] = None):
+    def __init__(self, stockfish_path: str | None = None):
         self.analyzer = StockfishAnalyzer(stockfish_path=stockfish_path)
         self.session = get_session()
 
@@ -69,6 +68,18 @@ class GameAnalyzer:
             # Initialize counters
             positions_data = []
             move_counts = {
+                "brilliant": 0,
+                "great": 0,
+                "best": 0,
+                "excellent": 0,
+                "good": 0,
+                "book": 0,
+                "inaccuracy": 0,
+                "mistake": 0,
+                "miss": 0,
+                "blunder": 0,
+            }
+            opponent_move_counts = {
                 "brilliant": 0,
                 "great": 0,
                 "best": 0,
@@ -143,6 +154,9 @@ class GameAnalyzer:
 
                         all_classifications.append(move_class)
                     else:
+                        classification = move_class["classification"]
+                        if classification in opponent_move_counts:
+                            opponent_move_counts[classification] += 1
                         opponent_classifications.append(move_class)
 
                 # Store position data for THIS move
@@ -186,6 +200,7 @@ class GameAnalyzer:
                 "middlegame_accuracy": middlegame_accuracy,
                 "endgame_accuracy": endgame_accuracy,
                 "move_counts": move_counts,
+                "opponent_move_counts": opponent_move_counts,
                 "analyzed": True,
             }
 
@@ -239,6 +254,18 @@ class GameAnalyzer:
             game.miss_moves = move_counts.get("miss", 0)
             game.blunder_moves = move_counts.get("blunder", 0)
 
+            # Update opponent move counts
+            opp_counts = summary["opponent_move_counts"]
+            game.opponent_brilliant_moves = opp_counts.get("brilliant", 0)
+            game.opponent_great_moves = opp_counts.get("great", 0)
+            game.opponent_best_moves = opp_counts.get("best", 0)
+            game.opponent_excellent_moves = opp_counts.get("excellent", 0)
+            game.opponent_good_moves = opp_counts.get("good", 0)
+            game.opponent_inaccuracy_moves = opp_counts.get("inaccuracy", 0)
+            game.opponent_mistake_moves = opp_counts.get("mistake", 0)
+            game.opponent_miss_moves = opp_counts.get("miss", 0)
+            game.opponent_blunder_moves = opp_counts.get("blunder", 0)
+
             # Explicitly add to session and commit
             self.session.add(game)
             self.session.commit()
@@ -251,7 +278,7 @@ class GameAnalyzer:
 
             traceback.print_exc()
 
-    def analyze_unanalyzed_games(self, limit: Optional[int] = None):
+    def analyze_unanalyzed_games(self, limit: int | None = None):
         """Analyze all unanalyzed games in database."""
         unanalyzed = self.session.query(Game).filter_by(analyzed=False).order_by(Game.date.desc())
 
