@@ -195,7 +195,7 @@
                         </span>
                     </td>
                     <td>{{ game.total_moves or '-' }}</td>
-                    <td>
+                    <td class="analysis-status-cell">
                         {% if game.analyzed %}
                         <span
                             class="badge {% if game.player_accuracy and game.player_accuracy >= 80 %}badge-success{% elif game.player_accuracy and game.player_accuracy >= 60 %}badge-warning{% else %}badge-error{% endif %}"
@@ -329,6 +329,50 @@
             cb.closest('tr').classList.add('selected');
         });
     }
+
+    // Polling for analysis status
+    async function checkAnalysisStatus() {
+        try {
+            const response = await fetch('/api/analysis/active');
+            const data = await response.json();
+            const activeIds = new Set(data.active_game_ids || []);
+
+            document.querySelectorAll('tr[data-id]').forEach(row => {
+                const gameId = parseInt(row.dataset.id);
+                const statusCell = row.querySelector('.analysis-status-cell');
+
+                if (statusCell) {
+                    if (activeIds.has(gameId)) {
+                        statusCell.innerHTML = '<span class="status-loading"><i class="fas fa-circle-notch fa-spin text-accent"></i></span>';
+                    } else {
+                        // If not active, revert to original state (or check if it WAS active and now done, potentially reload?)
+                        // For now, we only show spinner if active. If it WAS active and stopped, we might want to refresh the page
+                        // to show the new analysis, but that can be disruptive.
+                        // Simple approach: removing spinner if not active.
+                        const wasActive = statusCell.dataset.wasActive === 'true';
+                        if (wasActive) {
+                            // It finished! Reload page to show stats? Or just show a 'Done' checkmark?
+                            // Let's just reload strictly if we detected a transition.
+                            window.location.reload();
+                        }
+
+                        // We rely on the server-rendered template for the initial "not analyzed" or "stats" state.
+                        // We only override it if it's active.
+                    }
+
+                    if (activeIds.has(gameId)) {
+                        statusCell.dataset.wasActive = 'true';
+                    }
+                }
+            });
+        } catch (e) {
+            console.error('Error checking status:', e);
+        }
+    }
+
+    // Poll every 3 seconds
+    setInterval(checkAnalysisStatus, 3000);
+    checkAnalysisStatus(); // Initial check
 
     function sortTable(n) {
         // Simple client-side sort for current page

@@ -617,6 +617,44 @@
                 loading.style.display = 'none';
             }
         }
+
+        // Global check if this particular game is being analyzed (in case user refreshed)
+        async function checkGlobalAnalysis() {
+            try {
+                const response = await fetch('/api/analysis/active');
+                const data = await response.json();
+                const activeIds = new Set(data.active_game_ids || []);
+                const gameId = {{ game.id }
+            };
+
+            if (activeIds.has(gameId)) {
+                const btn = document.getElementById('analyze-btn');
+                const text = document.getElementById('analyze-text');
+                const loading = document.getElementById('analyze-loading');
+
+                if (btn) {
+                    btn.disabled = true;
+                    text.style.display = 'none';
+                    loading.style.display = 'inline';
+
+                    // Start polling generically since we may not have job ID
+                    // We'll just check global status every 2s
+                    setTimeout(checkGlobalAnalysis, 2000);
+                }
+            } else {
+                // If it WAS loading and now isn't, maybe we should reload?
+                const btn = document.getElementById('analyze-btn');
+                if (btn && btn.disabled && btn.textContent.includes('Analyzing')) {
+                    window.location.reload();
+                }
+            }
+        } catch (e) {
+            console.error(e);
+        }
+        }
+
+        // Initial check on load
+        checkGlobalAnalysis();
     </script>
 
 

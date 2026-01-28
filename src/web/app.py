@@ -343,6 +343,43 @@ def bulk_analyze_games():
     return jsonify({"success": True, "queued": queued_count, "errors": errors})
 
 
+@app.route("/api/analysis/active", methods=["GET"])
+def get_active_analysis():
+    """Get list of game IDs currently being analyzed or queued."""
+    if not queue_enabled:
+        return jsonify({"active_game_ids": []})
+
+    try:
+        from rq.registry import StartedJobRegistry
+
+        registry = StartedJobRegistry(queue=analysis_queue)
+
+        # Get active (running) job IDs
+        running_job_ids = registry.get_job_ids()
+        # Get queued job IDs
+        queued_job_ids = analysis_queue.job_ids
+
+        all_job_ids = running_job_ids + queued_job_ids
+        active_game_ids = set()
+
+        if all_job_ids:
+            from rq.job import Job
+
+            # Fetch jobs securely
+            jobs = Job.fetch_many(all_job_ids, connection=redis_conn)
+
+            for job in jobs:
+                if job and job.func_name.endswith("analyze_game_task"):
+                    # Argument 0 is game_id
+                    if job.args and len(job.args) > 0:
+                        active_game_ids.add(job.args[0])
+
+        return jsonify({"active_game_ids": list(active_game_ids)})
+    except Exception as e:
+        print(f"Error fetching active jobs: {e}")
+        return jsonify({"active_game_ids": [], "error": str(e)})
+
+
 @app.route("/api/jobs/<job_id>", methods=["GET"])
 def get_job_status(job_id):
     """Check status of a background job."""
