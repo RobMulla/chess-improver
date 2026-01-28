@@ -165,7 +165,7 @@
                                 <div class="info-row" style="grid-column: span 2;">
                                     <span class="text-muted">Opening</span>
                                     <strong title="{{ game.opening_name }} ({{ game.opening_eco }})">
-                                        {{ game.opening_name|truncate(30) or 'Unknown' }}
+                                        {{ (game.opening_name or 'Unknown')|truncate(30) }}
                                         <span class="text-xs text-gray-500">{{ game.opening_eco }}</span>
                                     </strong>
                                 </div>

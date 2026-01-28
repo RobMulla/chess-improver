@@ -263,6 +263,58 @@
         updateSelection();
     }
 
+    async function analyzeSelected() {
+        const checkboxes = document.querySelectorAll('.game-checkbox:checked');
+        const ids = Array.from(checkboxes).map(cb => parseInt(cb.value));
+
+        if (!ids.length) return;
+
+        if (!confirm(`Queue analysis for ${ids.length} games? This may take a few minutes.`)) return;
+
+        const btn = document.getElementById('analyze-selected-btn');
+        const originalContent = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Queueing...';
+
+        try {
+            const response = await fetch('/api/analyze-games', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ game_ids: ids })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                // Show success toast or similar
+                const toast = document.createElement('div');
+                toast.style.cssText = "position: fixed; bottom: 2rem; right: 2rem; background: var(--accent-primary); color: white; padding: 1rem 1.5rem; border-radius: 8px; box-shadow: var(--shadow-lg); z-index: 2000;";
+                toast.innerHTML = `<i class="fas fa-check-circle"></i> Queued ${data.queued} games for analysis!`;
+                document.body.appendChild(toast);
+
+                setTimeout(() => {
+                    toast.style.opacity = '0';
+                    toast.style.transition = 'opacity 0.5s ease-out';
+                    setTimeout(() => toast.remove(), 500);
+                }, 4000);
+
+                // Clear selection
+                checkboxes.forEach(cb => cb.checked = false);
+                document.getElementById('select-all').checked = false;
+                updateSelection();
+
+            } else {
+                alert(`Error: ${data.error}`);
+            }
+        } catch (e) {
+            console.error(e);
+            alert('Failed to connect to the server');
+        } finally {
+            btn.innerHTML = originalContent;
+            btn.disabled = false;
+        }
+    }
+
     function updateSelection() {
         const checkboxes = document.querySelectorAll('.game-checkbox:checked');
         const btn = document.getElementById('analyze-selected-btn');
