@@ -1,110 +1,97 @@
 <!DOCTYPE html>
 <html lang="en">
-
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Opening Repertoire - Chess Improver</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    <link rel="stylesheet" href="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.css">
-</head>
-
-<body>
-    <nav class="navbar">
-        <div class="nav-brand">♟️ Chess Improver</div>
-        <div class="nav-links">
-            <a href="/">Dashboard</a>
-            <a href="/plan">Daily Plan</a>
-            <a href="/games">Games</a>
-            <a href="/openings">Openings</a>
-            <a href="/practice">Practice</a>
-            <a href="/repertoire" class="active">Repertoire</a>
-        </div>
-    </nav>
-
-    <div class="container">
-        <h1>My Opening Repertoire</h1>
-        <p class="subtitle">Build and practice your ideal opening lines</p>
-
-        <div class="repertoire-actions">
-            <button id="new-line-btn" class="btn btn-primary">+ New Opening Line</button>
-        </div>
-
-        <div class="repertoire-container">
-            <div class="repertoire-list">
-                <h3>My Lines</h3>
-                {% if repertoires %}
-                {% for rep in repertoires %}
-                <div class="repertoire-card" data-id="{{ rep.id }}">
-                    <div class="rep-header">
-                        <h4>{{ rep.name }}</h4>
-                        <span class="color-badge {{ rep.color }}">{{ rep.color }}</span>
-                    </div>
-                    <p class="rep-notes">{{ rep.notes[:50] }}...</p>
-                    <div class="rep-actions">
-                        <button class="btn-small practice-btn" data-id="{{ rep.id }}">Practice</button>
-                        <button class="btn-small edit-btn" data-id="{{ rep.id }}">Edit</button>
-                    </div>
-                </div>
-                {% endfor %}
-                {% else %}
-                <p class="empty-message">No repertoire lines yet. Create your first one!</p>
-                {% endif %}
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Opening Repertoire - Chess Improver</title>
+        <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+        <link rel="stylesheet"
+              href="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.css">
+    </head>
+    <body>
+        <nav class="navbar">
+            <div class="nav-brand">♟️ Chess Improver</div>
+            <div class="nav-links">
+                <a href="/">Dashboard</a>
+                <a href="/plan">Daily Plan</a>
+                <a href="/games">Games</a>
+                <a href="/openings">Openings</a>
+                <a href="/practice">Practice</a>
+                <a href="/repertoire" class="active">Repertoire</a>
             </div>
-
-            <div id="repertoire-builder" class="repertoire-builder" style="display: none;">
-                <div class="builder-header">
-                    <h3 id="builder-title">New Opening Line</h3>
-                    <button id="close-builder-btn" class="btn">✕</button>
+        </nav>
+        <div class="container">
+            <h1>My Opening Repertoire</h1>
+            <p class="subtitle">Build and practice your ideal opening lines</p>
+            <div class="repertoire-actions">
+                <button id="new-line-btn" class="btn btn-primary">+ New Opening Line</button>
+            </div>
+            <div class="repertoire-container">
+                <div class="repertoire-list">
+                    <h3>My Lines</h3>
+                    {% if repertoires %}
+                        {% for rep in repertoires %}
+                            <div class="repertoire-card" data-id="{{ rep.id }}">
+                                <div class="rep-header">
+                                    <h4>{{ rep.name }}</h4>
+                                    <span class="color-badge {{ rep.color }}">{{ rep.color }}</span>
+                                </div>
+                                <p class="rep-notes">{{ rep.notes[:50] }}...</p>
+                                <div class="rep-actions">
+                                    <button class="btn-small practice-btn" data-id="{{ rep.id }}">Practice</button>
+                                    <button class="btn-small edit-btn" data-id="{{ rep.id }}">Edit</button>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <p class="empty-message">No repertoire lines yet. Create your first one!</p>
+                    {% endif %}
                 </div>
-
-                <div class="builder-form">
-                    <label>
-                        Opening Name
-                        <input type="text" id="line-name" placeholder="e.g., Sicilian Dragon">
-                    </label>
-
-                    <label>
-                        Playing As
-                        <select id="line-color">
-                            <option value="white">White</option>
-                            <option value="black">Black</option>
-                        </select>
-                    </label>
-
-                    <label>
-                        Notes
-                        <textarea id="line-notes" rows="3" placeholder="Key ideas, plans, etc."></textarea>
-                    </label>
-                </div>
-
-                <div class="builder-board-container">
-                    <h4>Build Your Line</h4>
-                    <p class="instruction">Make moves on the board to build your repertoire. Each move creates a branch.
-                    </p>
-
-                    <div id="repertoire-board"></div>
-
-                    <div class="move-list">
-                        <h5>Moves</h5>
-                        <div id="moves-display"></div>
+                <div id="repertoire-builder"
+                     class="repertoire-builder"
+                     style="display: none">
+                    <div class="builder-header">
+                        <h3 id="builder-title">New Opening Line</h3>
+                        <button id="close-builder-btn" class="btn">✕</button>
                     </div>
-
-                    <div class="builder-controls">
-                        <button id="undo-move-btn" class="btn">↶ Undo</button>
-                        <button id="clear-board-btn" class="btn">Clear</button>
-                        <button id="save-line-btn" class="btn btn-primary">Save Line</button>
+                    <div class="builder-form">
+                        <label>
+                            Opening Name
+                            <input type="text" id="line-name" placeholder="e.g., Sicilian Dragon">
+                        </label>
+                        <label>
+                            Playing As
+                            <select id="line-color">
+                                <option value="white">White</option>
+                                <option value="black">Black</option>
+                            </select>
+                        </label>
+                        <label>
+                            Notes
+                            <textarea id="line-notes" rows="3" placeholder="Key ideas, plans, etc."></textarea>
+                        </label>
+                    </div>
+                    <div class="builder-board-container">
+                        <h4>Build Your Line</h4>
+                        <p class="instruction">Make moves on the board to build your repertoire. Each move creates a branch.</p>
+                        <div id="repertoire-board"></div>
+                        <div class="move-list">
+                            <h5>Moves</h5>
+                            <div id="moves-display"></div>
+                        </div>
+                        <div class="builder-controls">
+                            <button id="undo-move-btn" class="btn">↶ Undo</button>
+                            <button id="clear-board-btn" class="btn">Clear</button>
+                            <button id="save-line-btn" class="btn btn-primary">Save Line</button>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
-
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
-
-    <script>
+        <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+        <script src="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
+        <script>
         let board = null;
         let game = new Chess();
         let currentRepertoireId = null;
@@ -217,7 +204,6 @@
 
             $(window).resize(board.resize);
         });
-    </script>
-</body>
-
+        </script>
+    </body>
 </html>

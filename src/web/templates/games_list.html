@@ -1,27 +1,28 @@
 {% extends "base.html" %}
 
 {% block title %}Games - Chess Improver{% endblock %}
-
 {% block sub_header %}
-<header class="content-header">
-    <div class="header-flex">
-        <div>
-            <h1>Games Library</h1>
-            <p>Select and analyze your imported games</p>
+    <header class="content-header">
+        <div class="header-flex">
+            <div>
+                <h1>Games Library</h1>
+                <p>Select and analyze your imported games</p>
+            </div>
+            <div class="header-actions">
+                <button type="button"
+                        id="analyze-selected-btn"
+                        onclick="analyzeSelected()"
+                        class="btn btn-primary"
+                        disabled>
+                    <i class="fas fa-microchip" style="margin-right:0.5rem;"></i>
+                    Analyze Selected
+                </button>
+            </div>
         </div>
-        <div class="header-actions">
-            <button type="button" id="analyze-selected-btn" onclick="analyzeSelected()" class="btn btn-primary"
-                disabled>
-                <i class="fas fa-microchip" style="margin-right:0.5rem;"></i>
-                Analyze Selected
-            </button>
-        </div>
-    </div>
-</header>
+    </header>
 {% endblock %}
-
 {% block content %}
-<style>
+    <style>
     /* Dense "Excel-like" Data Grid Styles */
     .data-grid-container {
         display: flex;
@@ -132,124 +133,127 @@
         padding: 2px 6px;
         font-size: 0.75rem;
     }
-</style>
-
-<div class="data-grid-container">
-    <div class="grid-toolbar">
-        <div style="display: flex; gap: 1rem; align-items: center;">
-            <span id="selection-count">0 selected</span>
-            <div style="height: 16px; width: 1px; background: var(--border-subtle);"></div>
-            <span>Total: {{ total_games }}</span>
+    </style>
+    <div class="data-grid-container">
+        <div class="grid-toolbar">
+            <div style="display: flex; gap: 1rem; align-items: center;">
+                <span id="selection-count">0 selected</span>
+                <div style="height: 16px; width: 1px; background: var(--border-subtle);"></div>
+                <span>Total: {{ total_games }}</span>
+            </div>
+            <div style="display: flex; gap: 0.5rem;">
+                <input type="text"
+                       placeholder="Filter..."
+                       style="background: var(--bg-primary);
+                              border: 1px solid var(--border-subtle);
+                              padding: 2px 8px;
+                              border-radius: 4px;
+                              width: 200px;
+                              color:white">
+            </div>
         </div>
-        <div style="display: flex; gap: 0.5rem;">
-            <input type="text" placeholder="Filter..."
-                style="background: var(--bg-primary); border: 1px solid var(--border-subtle); padding: 2px 8px; border-radius: 4px; width: 200px; color:white;">
+        <div class="grid-wrapper">
+            <table class="data-grid" id="games-table">
+                <thead>
+                    <tr>
+                        <th style="width: 30px;" class="cell-center">
+                            <input type="checkbox" id="select-all" onclick="toggleSelectAll()">
+                        </th>
+                        <th onclick="sortTable(1)">Date</th>
+                        <th onclick="sortTable(2)">Platform</th>
+                        <th onclick="sortTable(3)">White</th>
+                        <th onclick="sortTable(4)">Black</th>
+                        <th onclick="sortTable(5)">Result</th>
+                        <th onclick="sortTable(6)">Moves</th>
+                        <th onclick="sortTable(7)">Accuracy</th>
+                        <th onclick="sortTable(8)">Opening</th>
+                        <th class="cell-center">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for game in games %}
+                        <tr onclick="toggleRow(this)" data-id="{{ game.id }}">
+                            <td class="cell-center" onclick="event.stopPropagation()">
+                                <input type="checkbox"
+                                       name="game_ids"
+                                       value="{{ game.id }}"
+                                       class="game-checkbox"
+                                       onclick="updateSelection()">
+                            </td>
+                            <td>{{ game.date.strftime("%Y-%m-%d %H:%M") }}</td>
+                            <td>
+                                <span class="badge {% if game.platform == 'chess.com' %}badge-success{% else %}badge-info{% endif %}"
+                                      style="padding: 1px 4px;
+                                             font-size: 0.7rem">{{ game.platform }}</span>
+                            </td>
+                            <td>
+                                {{ "%.15s"|format(game.white_username or 'Unknown') }}
+                                <span style="color:var(--text-dim);">({{ game.white_rating or '?' }})</span>
+                            </td>
+                            <td>
+                                {{ "%.15s"|format(game.black_username or 'Unknown') }}
+                                <span style="color:var(--text-dim);">({{ game.black_rating or '?' }})</span>
+                            </td>
+                            <td>
+                                <span style="font-family:monospace;
+                                             font-weight:600;
+                                             color: {% if (game.result == '1-0' and game.player_color == 'white') or (game.result == '0-1' and game.player_color == 'black') %}var(--success){% elif game.result == '1/2-1/2' %}var(--text-dim){% else %}var(--error){% endif %}">
+                                    {{ game.result }}
+                                </span>
+                            </td>
+                            <td>{{ game.total_moves or '-' }}</td>
+                            <td class="analysis-status-cell">
+                                {% if game.analyzed %}
+                                    <span class="badge {% if game.player_accuracy and game.player_accuracy >= 80 %}badge-success{% elif game.player_accuracy and game.player_accuracy >= 60 %}badge-warning{% else %}badge-error{% endif %}"
+                                          style="padding: 1px 4px;
+                                                 font-size: 0.7rem">{{ "%.1f"|format(game.player_accuracy) }}%</span>
+                                {% else %}
+                                    <span style="opacity: 0.3;">-</span>
+                                {% endif %}
+                            </td>
+                            <td title="{{ game.opening_name }}">{{ "%.30s"|format(game.opening_name or '') }}...</td>
+                            <td class="cell-center" onclick="event.stopPropagation()">
+                                <a href="/games/{{ game.id }}"
+                                   style="color: var(--accent-primary);
+                                          text-decoration: none">View</a>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </div>
-    </div>
-
-    <div class="grid-wrapper">
-        <table class="data-grid" id="games-table">
-            <thead>
-                <tr>
-                    <th style="width: 30px;" class="cell-center">
-                        <input type="checkbox" id="select-all" onclick="toggleSelectAll()">
-                    </th>
-                    <th onclick="sortTable(1)">Date</th>
-                    <th onclick="sortTable(2)">Platform</th>
-                    <th onclick="sortTable(3)">White</th>
-                    <th onclick="sortTable(4)">Black</th>
-                    <th onclick="sortTable(5)">Result</th>
-                    <th onclick="sortTable(6)">Moves</th>
-                    <th onclick="sortTable(7)">Accuracy</th>
-                    <th onclick="sortTable(8)">Opening</th>
-                    <th class="cell-center">Action</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for game in games %}
-                <tr onclick="toggleRow(this)" data-id="{{ game.id }}">
-                    <td class="cell-center" onclick="event.stopPropagation()">
-                        <input type="checkbox" name="game_ids" value="{{ game.id }}" class="game-checkbox"
-                            onclick="updateSelection()">
-                    </td>
-                    <td>{{ game.date.strftime('%Y-%m-%d %H:%M') }}</td>
-                    <td>
-                        <span
-                            class="badge {% if game.platform == 'chess.com' %}badge-success{% else %}badge-info{% endif %}"
-                            style="padding: 1px 4px; font-size: 0.7rem;">
-                            {{ game.platform }}
-                        </span>
-                    </td>
-                    <td>
-                        {{ "%.15s"|format(game.white_username or 'Unknown') }}
-                        <span style="color:var(--text-dim);">({{ game.white_rating or '?' }})</span>
-                    </td>
-                    <td>
-                        {{ "%.15s"|format(game.black_username or 'Unknown') }}
-                        <span style="color:var(--text-dim);">({{ game.black_rating or '?' }})</span>
-                    </td>
-                    <td>
-                        <span
-                            style="font-family:monospace; font-weight:600; color: {% if (game.result == '1-0' and game.player_color == 'white') or (game.result == '0-1' and game.player_color == 'black') %}var(--success){% elif game.result == '1/2-1/2' %}var(--text-dim){% else %}var(--error){% endif %};">
-                            {{ game.result }}
-                        </span>
-                    </td>
-                    <td>{{ game.total_moves or '-' }}</td>
-                    <td class="analysis-status-cell">
-                        {% if game.analyzed %}
-                        <span
-                            class="badge {% if game.player_accuracy and game.player_accuracy >= 80 %}badge-success{% elif game.player_accuracy and game.player_accuracy >= 60 %}badge-warning{% else %}badge-error{% endif %}"
-                            style="padding: 1px 4px; font-size: 0.7rem;">
-                            {{ "%.1f"|format(game.player_accuracy) }}%
-                        </span>
-                        {% else %}
-                        <span style="opacity: 0.3;">-</span>
-                        {% endif %}
-                    </td>
-                    <td title="{{ game.opening_name }}">{{ "%.30s"|format(game.opening_name or '') }}...</td>
-                    <td class="cell-center" onclick="event.stopPropagation()">
-                        <a href="/games/{{ game.id }}"
-                            style="color: var(--accent-primary); text-decoration: none;">View</a>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-
-    <div class="grid-footer">
-        <div style="display: flex; gap: 0.5rem; align-items: center;">
-            <span>Rows per page:</span>
-            <select class="dense-select" onchange="window.location.href='?per_page='+this.value">
-                <option value="20" {% if per_page==20 %}selected{% endif %}>20</option>
-                <option value="50" {% if per_page==50 %}selected{% endif %}>50</option>
-                <option value="100" {% if per_page==100 %}selected{% endif %}>100</option>
-            </select>
-        </div>
-
-        <div style="display: flex; gap: 0.5rem; align-items: center;">
-            {% if page > 1 %}
-            <a href="?page={{ page - 1 }}&per_page={{ per_page }}"
-                style="color: var(--text-primary); text-decoration: none;">&lt; Prev</a>
-            {% else %}
-            <span style="color: var(--text-dim);">&lt; Prev</span>
-            {% endif %}
-
-            <span>Page {{ page }}</span>
-
-            {% if page * per_page < total_games %} <a href="?page={{ page + 1 }}&per_page={{ per_page }}"
-                style="color: var(--text-primary); text-decoration: none;">Next &gt;</a>
+        <div class="grid-footer">
+            <div style="display: flex; gap: 0.5rem; align-items: center;">
+                <span>Rows per page:</span>
+                <select class="dense-select"
+                        onchange="window.location.href='?per_page='+this.value">
+                    <option value="20" {% if per_page==20 %}selected{% endif %}>20</option>
+                    <option value="50" {% if per_page==50 %}selected{% endif %}>50</option>
+                    <option value="100" {% if per_page==100 %}selected{% endif %}>100</option>
+                </select>
+            </div>
+            <div style="display: flex; gap: 0.5rem; align-items: center;">
+                {% if page > 1 %}
+                    <a href="?page={{ page - 1 }}&per_page={{ per_page }}"
+                       style="color: var(--text-primary);
+                              text-decoration: none">&lt; Prev</a>
                 {% else %}
-                <span style="color: var(--text-dim);">Next &gt;</span>
+                    <span style="color: var(--text-dim);">&lt; Prev</span>
                 {% endif %}
+                <span>Page {{ page }}</span>
+                {% if page * per_page < total_games %}
+                    <a href="?page={{ page + 1 }}&per_page={{ per_page }}"
+                       style="color: var(--text-primary);
+                              text-decoration: none">Next &gt;</a>
+                {% else %}
+                    <span style="color: var(--text-dim);">Next &gt;</span>
+                {% endif %}
+            </div>
         </div>
     </div>
-</div>
-
 {% endblock %}
-
 {% block scripts %}
-<script>
+    <script>
     function toggleRow(row) {
         // Toggle selection on row click if not text selection
         if (window.getSelection().toString()) return;
@@ -416,5 +420,5 @@
             }
         }
     }
-</script>
+    </script>
 {% endblock %}

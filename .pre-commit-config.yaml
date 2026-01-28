@@ -34,6 +34,13 @@ repos:
         args: ['-c', 'pyproject.toml']
         additional_dependencies: ['bandit[toml]']
 
+  # HTML Linting
+  - repo: https://github.com/riverside-healthcare/djLint
+    rev: v1.34.1
+    hooks:
+      - id: djlint-reformat
+      - id: djlint
+
   # Test coverage enforcement
   - repo: local
     hooks:

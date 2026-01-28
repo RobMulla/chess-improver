@@ -1,165 +1,172 @@
 <!DOCTYPE html>
 <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Moves Browser - Chess Improver</title>
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+              rel="stylesheet">
+        <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    </head>
+    <body>
+        {% include "sidebar.html" %}
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Moves Browser - Chess Improver</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-</head>
-
-<body>
-    {% include 'sidebar.html' %}
-
-    <main class="main-layout">
-        <header class="content-header">
-            <h1>Moves Browser</h1>
-            <p>{{ total_positions }} analyzed positions from {{ total_games }} games</p>
-        </header>
-
-        <div class="content-body">
-            <!-- Filters -->
-            <div class="card">
-                <form method="GET"
-                    style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
-                    <div>
-                        <label
-                            style="display: block; margin-bottom: 0.5rem; font-size: 0.875rem; color: var(--text-muted);">Classification</label>
-                        <select name="classification" class="filter-select">
-                            <option value="">All Moves</option>
-                            <option value="brilliant" {% if request.args.get('classification')=='brilliant' %}selected{%
-                                endif %}>Brilliant</option>
-                            <option value="great" {% if request.args.get('classification')=='great' %}selected{% endif
-                                %}>Great</option>
-                            <option value="best" {% if request.args.get('classification')=='best' %}selected{% endif %}>
-                                Best</option>
-                            <option value="good" {% if request.args.get('classification')=='good' %}selected{% endif %}>
-                                Good</option>
-                            <option value="inaccuracy" {% if request.args.get('classification')=='inaccuracy'
-                                %}selected{% endif %}>Inaccuracy</option>
-                            <option value="mistake" {% if request.args.get('classification')=='mistake' %}selected{%
-                                endif %}>Mistake</option>
-                            <option value="blunder" {% if request.args.get('classification')=='blunder' %}selected{%
-                                endif %}>Blunder</option>
-                        </select>
-                    </div>
-
-                    <div>
-                        <label
-                            style="display: block; margin-bottom: 0.5rem; font-size: 0.875rem; color: var(--text-muted);">Game
-                            Phase</label>
-                        <select name="phase" class="filter-select">
-                            <option value="">All Phases</option>
-                            <option value="opening" {% if request.args.get('phase')=='opening' %}selected{% endif %}>
-                                Opening</option>
-                            <option value="middlegame" {% if request.args.get('phase')=='middlegame' %}selected{% endif
-                                %}>Middlegame</option>
-                            <option value="endgame" {% if request.args.get('phase')=='endgame' %}selected{% endif %}>
-                                Endgame</option>
-                        </select>
-                    </div>
-
-                    <div style="display: flex; align-items: end; gap: 0.5rem;">
-                        <button type="submit" class="btn btn-primary" style="flex: 1;">Apply</button>
-                        <a href="/moves" class="btn btn-secondary">Clear</a>
-                    </div>
-                </form>
-            </div>
-
-            <!-- Moves Table -->
-            <div class="card">
-                <div class="table-container">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Game</th>
-                                <th>Move #</th>
-                                <th>Phase</th>
-                                <th>Player Move</th>
-                                <th>Best Move</th>
-                                <th>Classification</th>
-                                <th>Eval Drop</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for pos in positions %}
-                            <tr>
-                                <td>
-                                    <a href="/games/{{ pos.game_id }}" style="color: var(--accent-primary);">
-                                        {{ pos.game.date.strftime('%Y-%m-%d') if pos.game.date else 'N/A' }}
-                                    </a>
-                                </td>
-                                <td>{{ pos.move_number }}</td>
-                                <td>
-                                    <span class="badge badge-secondary">{{ pos.game_phase or '?' }}</span>
-                                </td>
-                                <td><code>{{ pos.player_move }}</code></td>
-                                <td><code>{{ pos.best_move }}</code></td>
-                                <td>
-                                    {% if pos.move_classification %}
-                                    <span class="badge
-                                        {% if pos.move_classification in ['brilliant', 'great'] %}badge-success
-                                        {% elif pos.move_classification in ['best', 'excellent', 'good'] %}badge-info
-                                        {% elif pos.move_classification == 'inaccuracy' %}badge-warning
-                                        {% else %}badge-error{% endif %}">
-                                        {{ pos.move_classification }}
-                                    </span>
-                                    {% else %}
-                                    <span style="color: var(--text-dim);">-</span>
-                                    {% endif %}
-                                </td>
-                                <td>
-                                    {% if pos.eval_drop %}
-                                    <span {% if pos.eval_drop> 100 %}style="color: var(--error);"{% endif %}>
-                                        {{ "%.0f"|format(pos.eval_drop) }}
-                                    </span>
-                                    {% else %}
-                                    -
-                                    {% endif %}
-                                </td>
-                                <td>
-                                    <button class="btn btn-sm btn-secondary"
-                                        onclick="viewPosition({{ pos.id }})">View</button>
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
+        <main class="main-layout">
+            <header class="content-header">
+                <h1>Moves Browser</h1>
+                <p>{{ total_positions }} analyzed positions from {{ total_games }} games</p>
+            </header>
+            <div class="content-body">
+                <!-- Filters -->
+                <div class="card">
+                    <form method="get"
+                          style="display: grid;
+                                 grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                                 gap: 1rem">
+                        <div>
+                            <label style="display: block;
+                                          margin-bottom: 0.5rem;
+                                          font-size: 0.875rem;
+                                          color: var(--text-muted)">Classification</label>
+                            <select name="classification" class="filter-select">
+                                <option value="">All Moves</option>
+                                <option value="brilliant" {% if request.args.get('classification')=='brilliant' %}selected{%
+                                    endif %}>Brilliant</option>
+                                <option value="great" {% if request.args.get('classification')=='great' %}selected{% endif
+                                    %}>Great</option>
+                                <option value="best"
+                                        {% if request.args.get('classification')=='best' %}selected{% endif %}>
+                                    Best
+                                </option>
+                                <option value="good"
+                                        {% if request.args.get('classification')=='good' %}selected{% endif %}>
+                                    Good
+                                </option>
+                                <option value="inaccuracy" {% if request.args.get('classification')=='inaccuracy'
+                                    %}selected{% endif %}>Inaccuracy</option>
+                                <option value="mistake" {% if request.args.get('classification')=='mistake' %}selected{%
+                                    endif %}>Mistake</option>
+                                <option value="blunder" {% if request.args.get('classification')=='blunder' %}selected{%
+                                    endif %}>Blunder</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label style="display: block;
+                                          margin-bottom: 0.5rem;
+                                          font-size: 0.875rem;
+                                          color: var(--text-muted)">
+                                Game
+                                Phase
+                            </label>
+                            <select name="phase" class="filter-select">
+                                <option value="">All Phases</option>
+                                <option value="opening"
+                                        {% if request.args.get('phase')=='opening' %}selected{% endif %}>
+                                    Opening
+                                </option>
+                                <option value="middlegame" {% if request.args.get('phase')=='middlegame' %}selected{% endif
+                                    %}>Middlegame</option>
+                                <option value="endgame"
+                                        {% if request.args.get('phase')=='endgame' %}selected{% endif %}>
+                                    Endgame
+                                </option>
+                            </select>
+                        </div>
+                        <div style="display: flex; align-items: end; gap: 0.5rem;">
+                            <button type="submit" class="btn btn-primary" style="flex: 1;">Apply</button>
+                            <a href="/moves" class="btn btn-secondary">Clear</a>
+                        </div>
+                    </form>
                 </div>
-
-                <!-- Pagination -->
-                {% if total_positions > 50 %}
-                <div
-                    style="display: flex; justify-content: center; align-items: center; gap: 1rem; margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--border-subtle);">
-                    {% if page > 1 %}
-                    <a href="?page={{ page - 1 }}&classification={{ request.args.get('classification', '') }}&phase={{ request.args.get('phase', '') }}"
-                        class="btn btn-secondary">← Previous</a>
+                <!-- Moves Table -->
+                <div class="card">
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Game</th>
+                                    <th>Move #</th>
+                                    <th>Phase</th>
+                                    <th>Player Move</th>
+                                    <th>Best Move</th>
+                                    <th>Classification</th>
+                                    <th>Eval Drop</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for pos in positions %}
+                                    <tr>
+                                        <td>
+                                            <a href="/games/{{ pos.game_id }}" style="color: var(--accent-primary);">
+                                                {{ pos.game.date.strftime("%Y-%m-%d") if pos.game.date else 'N/A' }}
+                                            </a>
+                                        </td>
+                                        <td>{{ pos.move_number }}</td>
+                                        <td>
+                                            <span class="badge badge-secondary">{{ pos.game_phase or '?' }}</span>
+                                        </td>
+                                        <td>
+                                            <code>{{ pos.player_move }}</code>
+                                        </td>
+                                        <td>
+                                            <code>{{ pos.best_move }}</code>
+                                        </td>
+                                        <td>
+                                            {% if pos.move_classification %}
+                                                <span class="badge {% if pos.move_classification in ['brilliant', 'great'] %}badge-success {% elif pos.move_classification in ['best', 'excellent', 'good'] %}badge-info {% elif pos.move_classification == 'inaccuracy' %}badge-warning {% else %}badge-error{% endif %}">
+                                                    {{ pos.move_classification }}
+                                                </span>
+                                            {% else %}
+                                                <span style="color: var(--text-dim);">-</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if pos.eval_drop %}
+                                                <span {% if pos.eval_drop> 100 %}style="color: var(--error);"{% endif %}>{{ "%.0f"|format(pos.eval_drop) }}</span>
+                                            {% else %}
+                                                -
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <button class="btn btn-sm btn-secondary" onclick="viewPosition({{ pos.id }})">View</button>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    <!-- Pagination -->
+                    {% if total_positions > 50 %}
+                        <div style="display: flex;
+                                    justify-content: center;
+                                    align-items: center;
+                                    gap: 1rem;
+                                    margin-top: 1.5rem;
+                                    padding-top: 1.5rem;
+                                    border-top: 1px solid var(--border-subtle)">
+                            {% if page > 1 %}
+                                <a href="?page={{ page - 1 }}&classification={{ request.args.get('classification', '') }}&phase={{ request.args.get('phase', '') }}"
+                                   class="btn btn-secondary">← Previous</a>
+                            {% endif %}
+                            <span style="color: var(--text-muted);">Page {{ page }} of {{ ((total_positions - 1) // 50) + 1
+                            }}</span>
+                            {% if page * 50 < total_positions %}
+                                <a href="?page={{ page + 1 }}&classification={{ request.args.get('classification', '') }}&phase={{ request.args.get('phase', '') }}"
+                                   class="btn btn-secondary">Next →</a>
+                            {% endif %}
+                        </div>
                     {% endif %}
-
-                    <span style="color: var(--text-muted);">
-                        Page {{ page }} of {{ ((total_positions - 1) // 50) + 1 }}
-                    </span>
-
-                    {% if page * 50 < total_positions %} <a
-                        href="?page={{ page + 1 }}&classification={{ request.args.get('classification', '') }}&phase={{ request.args.get('phase', '') }}"
-                        class="btn btn-secondary">Next →</a>
-                        {% endif %}
                 </div>
-                {% endif %}
             </div>
-        </div>
-    </main>
-
-    <script>
+        </main>
+        <script>
         function viewPosition(positionId) {
             // TODO: Open modal with chessboard showing position
             alert('Position viewer coming soon! Position ID: ' + positionId);
         }
-    </script>
-
-    <style>
+        </script>
+        <style>
         .filter-select {
             width: 100%;
             padding: 0.5rem;
@@ -177,7 +184,6 @@
             font-family: 'Courier New', monospace;
             font-size: 0.875rem;
         }
-    </style>
-</body>
-
+        </style>
+    </body>
 </html>

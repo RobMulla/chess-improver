@@ -1,156 +1,161 @@
 <!DOCTYPE html>
 <html lang="en">
-
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Openings - Chess Improver</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-</head>
-
-<body>
-    <aside class="sidebar">
-        <div class="sidebar-brand">
-            <h1><span class="icon">♟️</span> Chess Improver</h1>
-        </div>
-
-        <nav class="sidebar-nav">
-            <div class="nav-section">
-                <div class="nav-section-title">Overview</div>
-                <a href="/" class="nav-link">
-                    <span class="nav-icon">📊</span>
-                    Dashboard
-                </a>
-                <a href="/plan" class="nav-link">
-                    <span class="nav-icon">📋</span>
-                    Daily Plan
-                </a>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Openings - Chess Improver</title>
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+              rel="stylesheet">
+        <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    </head>
+    <body>
+        <aside class="sidebar">
+            <div class="sidebar-brand">
+                <h1>
+                    <span class="icon">♟️</span> Chess Improver
+                </h1>
             </div>
-
-            <div class="nav-section">
-                <div class="nav-section-title">Analysis</div>
-                <a href="/games" class="nav-link">
-                    <span class="nav-icon">🎮</span>
-                    Games
-                </a>
-                <a href="/openings" class="nav-link active">
-                    <span class="nav-icon">📖</span>
-                    Openings
-                </a>
-                <a href="/insights" class="nav-link">
-                    <span class="nav-icon">💡</span>
-                    Insights
-                </a>
-            </div>
-
-            <div class="nav-section">
-                <div class="nav-section-title">Training</div>
-                <a href="/practice" class="nav-link">
-                    <span class="nav-icon">🎯</span>
-                    Practice Mistakes
-                </a>
-                <a href="/repertoire" class="nav-link">
-                    <span class="nav-icon">📚</span>
-                    My Repertoire
-                </a>
-            </div>
-        </nav>
-    </aside>
-
-    <main class="main-layout">
-        <header class="content-header">
-            <h1>Opening Repertoire</h1>
-            <p>Performance statistics by opening</p>
-        </header>
-
-        <div class="content-body">
-            <!-- Filters -->
-            <div class="card">
-                <form method="GET" action="/openings" style="display: flex; gap: 1rem; align-items: end;">
-                    <div style="flex: 1;">
-                        <label
-                            style="display: block; margin-bottom: 0.5rem; font-size: 0.875rem; color: var(--text-muted);">Color</label>
-                        <select name="color"
-                            style="width: 100%; padding: 0.5rem; background: var(--bg-tertiary); border: 1px solid var(--border-subtle); border-radius: 6px; color: var(--text-primary);">
-                            <option value="">All Colors</option>
-                            <option value="white" {% if color_filter=='white' %}selected{% endif %}>White</option>
-                            <option value="black" {% if color_filter=='black' %}selected{% endif %}>Black</option>
-                        </select>
-                    </div>
-
-                    <button type="submit" class="btn btn-primary">Apply</button>
-                    <a href="/openings" class="btn btn-secondary">Clear</a>
-                </form>
-            </div>
-
-            <!-- Openings Table -->
-            {% if openings %}
-            <div class="card">
-                <div class="table-container">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Opening</th>
-                                <th>Color</th>
-                                <th>Games</th>
-                                <th>W / D / L</th>
-                                <th>Win Rate</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for opening in openings %}
-                            <tr>
-                                <td style="font-weight: 600; max-width: 300px;">{{ opening.name }}</td>
-                                <td>
-                                    <span
-                                        class="badge {% if opening.color == 'white' %}badge-info{% else %}badge-secondary{% endif %}">
-                                        {{ opening.color }}
-                                    </span>
-                                </td>
-                                <td>{{ opening.games_played }}</td>
-                                <td>
-                                    <span class="badge badge-success">{{ opening.wins }}</span>
-                                    <span class="badge badge-warning">{{ opening.draws }}</span>
-                                    <span class="badge badge-error">{{ opening.losses }}</span>
-                                </td>
-                                <td>
-                                    <div style="display: flex; align-items: center; gap: 0.5rem;">
-                                        <span
-                                            class="badge {% if opening.win_rate >= 50 %}badge-success{% elif opening.win_rate >= 40 %}badge-warning{% else %}badge-error{% endif %}">
-                                            {{ "%.1f"|format(opening.win_rate) }}%
-                                        </span>
-                                        <div
-                                            style="flex: 1; height: 6px; background: var(--bg-tertiary); border-radius: 3px; overflow: hidden;">
-                                            <div
-                                                style="width: {{ opening.win_rate }}%; height: 100%; background: var(--accent-primary);">
-                                            </div>
-                                        </div>
-                                    </div>
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
+            <nav class="sidebar-nav">
+                <div class="nav-section">
+                    <div class="nav-section-title">Overview</div>
+                    <a href="/" class="nav-link">
+                        <span class="nav-icon">📊</span>
+                        Dashboard
+                    </a>
+                    <a href="/plan" class="nav-link">
+                        <span class="nav-icon">📋</span>
+                        Daily Plan
+                    </a>
                 </div>
+                <div class="nav-section">
+                    <div class="nav-section-title">Analysis</div>
+                    <a href="/games" class="nav-link">
+                        <span class="nav-icon">🎮</span>
+                        Games
+                    </a>
+                    <a href="/openings" class="nav-link active">
+                        <span class="nav-icon">📖</span>
+                        Openings
+                    </a>
+                    <a href="/insights" class="nav-link">
+                        <span class="nav-icon">💡</span>
+                        Insights
+                    </a>
+                </div>
+                <div class="nav-section">
+                    <div class="nav-section-title">Training</div>
+                    <a href="/practice" class="nav-link">
+                        <span class="nav-icon">🎯</span>
+                        Practice Mistakes
+                    </a>
+                    <a href="/repertoire" class="nav-link">
+                        <span class="nav-icon">📚</span>
+                        My Repertoire
+                    </a>
+                </div>
+            </nav>
+        </aside>
+        <main class="main-layout">
+            <header class="content-header">
+                <h1>Opening Repertoire</h1>
+                <p>Performance statistics by opening</p>
+            </header>
+            <div class="content-body">
+                <!-- Filters -->
+                <div class="card">
+                    <form method="get"
+                          action="/openings"
+                          style="display: flex;
+                                 gap: 1rem;
+                                 align-items: end">
+                        <div style="flex: 1;">
+                            <label style="display: block;
+                                          margin-bottom: 0.5rem;
+                                          font-size: 0.875rem;
+                                          color: var(--text-muted)">Color</label>
+                            <select name="color"
+                                    style="width: 100%;
+                                           padding: 0.5rem;
+                                           background: var(--bg-tertiary);
+                                           border: 1px solid var(--border-subtle);
+                                           border-radius: 6px;
+                                           color: var(--text-primary)">
+                                <option value="">All Colors</option>
+                                <option value="white" {% if color_filter=='white' %}selected{% endif %}>White</option>
+                                <option value="black" {% if color_filter=='black' %}selected{% endif %}>Black</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Apply</button>
+                        <a href="/openings" class="btn btn-secondary">Clear</a>
+                    </form>
+                </div>
+                <!-- Openings Table -->
+                {% if openings %}
+                    <div class="card">
+                        <div class="table-container">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Opening</th>
+                                        <th>Color</th>
+                                        <th>Games</th>
+                                        <th>W / D / L</th>
+                                        <th>Win Rate</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for opening in openings %}
+                                        <tr>
+                                            <td style="font-weight: 600; max-width: 300px;">{{ opening.name }}</td>
+                                            <td>
+                                                <span class="badge {% if opening.color == 'white' %}badge-info{% else %}badge-secondary{% endif %}">
+                                                    {{ opening.color }}
+                                                </span>
+                                            </td>
+                                            <td>{{ opening.games_played }}</td>
+                                            <td>
+                                                <span class="badge badge-success">{{ opening.wins }}</span>
+                                                <span class="badge badge-warning">{{ opening.draws }}</span>
+                                                <span class="badge badge-error">{{ opening.losses }}</span>
+                                            </td>
+                                            <td>
+                                                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                                    <span class="badge {% if opening.win_rate >= 50 %}badge-success{% elif opening.win_rate >= 40 %}badge-warning{% else %}badge-error{% endif %}">
+                                                        {{ "%.1f"|format(opening.win_rate) }}%
+                                                    </span>
+                                                    <div style="flex: 1;
+                                                                height: 6px;
+                                                                background: var(--bg-tertiary);
+                                                                border-radius: 3px;
+                                                                overflow: hidden">
+                                                        <div style="width: {{ opening.win_rate }}%;
+                                                                    height: 100%;
+                                                                    background: var(--accent-primary)"></div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                {% else %}
+                    <div class="card">
+                        <h2>No opening data yet</h2>
+                        <p style="color: var(--text-muted);">
+                            Games need opening information. Sync more games to see opening
+                            statistics.
+                        </p>
+                    </div>
+                {% endif %}
             </div>
-            {% else %}
-            <div class="card">
-                <h2>No opening data yet</h2>
-                <p style="color: var(--text-muted);">
-                    Games need opening information. Sync more games to see opening statistics.
-                </p>
-            </div>
-            {% endif %}
-        </div>
-    </main>
-
-    <style>
+        </main>
+        <style>
         .badge-secondary {
             background: var(--bg-tertiary);
             color: var(--text-secondary);
         }
-    </style>
-</body>
-
+        </style>
+    </body>
 </html>

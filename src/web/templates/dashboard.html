@@ -1,76 +1,96 @@
 {% extends "base.html" %}
 
 {% block title %}Dashboard - Chess Improver{% endblock %}
-
 {% block sub_header %}
-<header class="content-header">
-    <div class="header-flex">
-        <div>
-            <h1>Dashboard</h1>
-            <p>Your chess improvement overview</p>
-        </div>
-        <div class="header-actions">
-            <a href="/practice" class="btn btn-primary">🎯 Start Practice</a>
-            <a href="/games" class="btn btn-secondary">🎮 All Games</a>
-        </div>
-    </div>
-</header>
-{% endblock %}
-
-{% block content %}
-<!-- Statistics Grid -->
-<div class="stats-grid">
-    <div class="stat-card">
-        <div class="stat-value">{{ total_games }}</div>
-        <div class="stat-label">Total Games Imported</div>
-    </div>
-
-    <div class="stat-card">
-        <div class="stat-value">{{ analyzed_games }}</div>
-        <div class="stat-label">Analyzed Games</div>
-    </div>
-
-    <div class="stat-card">
-        <div class="stat-value">
-            {{ ((analyzed_games / total_games * 100) if total_games > 0 else 0)|round|int }}%
-        </div>
-        <div class="stat-label">Analysis Completion</div>
-    </div>
-</div>
-
-<div style="display: grid; grid-template-columns: 1fr 350px; gap: 1.5rem;">
-    <!-- Main Content Column -->
-    <div style="display: flex; flex-direction: column; gap: 1.5rem;">
-        <!-- Heatmap Section -->
-        <div class="card">
-            <div class="card-header">
-                <h2 class="card-title">Activity</h2>
-                <div class="text-sm text-muted">Last 12 Months</div>
+    <header class="content-header">
+        <div class="header-flex">
+            <div>
+                <h1>Dashboard</h1>
+                <p>Your chess improvement overview</p>
             </div>
-
-            <div class="heatmap-container" style="overflow-x: auto; padding-bottom: 5px;">
-                <div id="heatmap-grid"
-                    style="display: grid; grid-template-rows: repeat(7, 10px); grid-auto-flow: column; gap: 3px; width: max-content;">
-                    <!-- Populated by JS -->
+            <div class="header-actions">
+                <a href="/practice" class="btn btn-primary">🎯 Start Practice</a>
+                <a href="/games" class="btn btn-secondary">🎮 All Games</a>
+            </div>
+        </div>
+    </header>
+{% endblock %}
+{% block content %}
+    <!-- Statistics Grid -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-value">{{ total_games }}</div>
+            <div class="stat-label">Total Games Imported</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">{{ analyzed_games }}</div>
+            <div class="stat-label">Analyzed Games</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">{{ ((analyzed_games / total_games * 100) if total_games > 0 else 0)|round|int }}%</div>
+            <div class="stat-label">Analysis Completion</div>
+        </div>
+    </div>
+    <div style="display: grid; grid-template-columns: 1fr 350px; gap: 1.5rem;">
+        <!-- Main Content Column -->
+        <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+            <!-- Heatmap Section -->
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">Activity</h2>
+                    <div class="text-sm text-muted">Last 12 Months</div>
+                </div>
+                <div class="heatmap-container"
+                     style="overflow-x: auto;
+                            padding-bottom: 5px">
+                    <div id="heatmap-grid"
+                         style="display: grid;
+                                grid-template-rows: repeat(7, 10px);
+                                grid-auto-flow: column;
+                                gap: 3px;
+                                width: max-content">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+                <div class="heatmap-legend"
+                     style="margin-top: 15px;
+                            display: flex;
+                            gap: 8px;
+                            align-items: center;
+                            font-size: 0.75rem;
+                            color: var(--text-muted);
+                            justify-content: flex-end">
+                    <span>Less</span>
+                    <div style="width: 10px;
+                                height: 10px;
+                                background: rgba(255,255,255,0.05);
+                                border-radius: 2px"></div>
+                    <div style="width: 10px;
+                                height: 10px;
+                                background: #0e4429;
+                                border-radius: 2px"></div>
+                    <div style="width: 10px;
+                                height: 10px;
+                                background: #006d32;
+                                border-radius: 2px"></div>
+                    <div style="width: 10px;
+                                height: 10px;
+                                background: #26a641;
+                                border-radius: 2px"></div>
+                    <div style="width: 10px;
+                                height: 10px;
+                                background: #39d353;
+                                border-radius: 2px"></div>
+                    <span>More</span>
+                    <span style="margin-left: 15px;
+                                 border: 1px solid var(--accent-primary);
+                                 width: 10px;
+                                 height: 10px;
+                                 display: inline-block"></span>
+                    <span>Analyzed</span>
                 </div>
             </div>
-
-            <div class="heatmap-legend"
-                style="margin-top: 15px; display: flex; gap: 8px; align-items: center; font-size: 0.75rem; color: var(--text-muted); justify-content: flex-end;">
-                <span>Less</span>
-                <div style="width: 10px; height: 10px; background: rgba(255,255,255,0.05); border-radius: 2px;"></div>
-                <div style="width: 10px; height: 10px; background: #0e4429; border-radius: 2px;"></div>
-                <div style="width: 10px; height: 10px; background: #006d32; border-radius: 2px;"></div>
-                <div style="width: 10px; height: 10px; background: #26a641; border-radius: 2px;"></div>
-                <div style="width: 10px; height: 10px; background: #39d353; border-radius: 2px;"></div>
-                <span>More</span>
-                <span
-                    style="margin-left: 15px; border: 1px solid var(--accent-primary); width: 10px; height: 10px; display: inline-block;"></span>
-                <span>Analyzed</span>
-            </div>
-        </div>
-
-        <script>
+            <script>
             document.addEventListener('DOMContentLoaded', function () {
                 fetch('/api/stats/activity')
                     .then(response => response.json())
@@ -148,104 +168,107 @@
                     current.setDate(current.getDate() + 1);
                 }
             }
-        </script>
-        <!-- Top Openings Section -->
-        {% if top_openings %}
-        <div class="card">
-            <div class="card-header">
-                <h2 class="card-title">Top Openings</h2>
-                <a href="/openings" class="btn btn-secondary btn-sm">View All →</a>
-            </div>
-
-            <div class="table-container">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Opening</th>
-                            <th style="text-align: center;">Games</th>
-                            <th style="text-align: center;">Record</th>
-                            <th style="text-align: right;">Win Rate</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for opening in top_openings %}
-                        <tr>
-                            <td style="font-weight: 600;">{{ opening.name }}</td>
-                            <td style="text-align: center;">{{ opening.games_played }}</td>
-                            <td style="text-align: center; color: var(--text-muted);">
-                                {{ opening.wins }}-{{ opening.draws }}-{{ opening.losses }}
-                            </td>
-                            <td style="text-align: right;">
-                                <span
-                                    class="badge {% if opening.win_rate > 0.5 %}badge-success{% elif opening.win_rate > 0.4 %}badge-warning{% else %}badge-error{% endif %}">
-                                    {{ (opening.win_rate * 100)|round|int }}%
-                                </span>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-        {% endif %}
-
-        <!-- Blunder Buster Promo -->
-        <div class="card"
-            style="background: linear-gradient(135deg, rgba(20, 184, 166, 0.1) 0%, rgba(20, 184, 166, 0.02) 100%);">
-            <div style="display: flex; align-items: flex-start; gap: 1.5rem;">
-                <div style="font-size: 3rem;">🎯</div>
-                <div>
-                    <h3 style="margin-bottom: 0.5rem; color: var(--accent-light);">Ready to improve?</h3>
-                    <p style="color: var(--text-muted); margin-bottom: 1.25rem;">
-                        Our **Blunder Buster** training focuses on the exact positions where you made mistakes in your
-                        past games.
-                        By re-solving these positions, you build pattern recognition and avoid making the same errors
-                        again.
-                    </p>
-                    <a href="/practice" class="btn btn-primary">Launch Blunder Buster →</a>
+            </script>
+            <!-- Top Openings Section -->
+            {% if top_openings %}
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">Top Openings</h2>
+                        <a href="/openings" class="btn btn-secondary btn-sm">View All →</a>
+                    </div>
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Opening</th>
+                                    <th style="text-align: center;">Games</th>
+                                    <th style="text-align: center;">Record</th>
+                                    <th style="text-align: right;">Win Rate</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for opening in top_openings %}
+                                    <tr>
+                                        <td style="font-weight: 600;">{{ opening.name }}</td>
+                                        <td style="text-align: center;">{{ opening.games_played }}</td>
+                                        <td style="text-align: center; color: var(--text-muted);">
+                                            {{ opening.wins }}-{{ opening.draws }}-{{ opening.losses }}
+                                        </td>
+                                        <td style="text-align: right;">
+                                            <span class="badge {% if opening.win_rate > 0.5 %}badge-success{% elif opening.win_rate > 0.4 %}badge-warning{% else %}badge-error{% endif %}">
+                                                {{ (opening.win_rate * 100)|round|int }}%
+                                            </span>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            {% endif %}
+            <!-- Blunder Buster Promo -->
+            <div class="card"
+                 style="background: linear-gradient(135deg, rgba(20, 184, 166, 0.1) 0%, rgba(20, 184, 166, 0.02) 100%)">
+                <div style="display: flex; align-items: flex-start; gap: 1.5rem;">
+                    <div style="font-size: 3rem;">🎯</div>
+                    <div>
+                        <h3 style="margin-bottom: 0.5rem; color: var(--accent-light);">Ready to improve?</h3>
+                        <p style="color: var(--text-muted); margin-bottom: 1.25rem;">
+                            Our **Blunder Buster** training focuses on the exact positions where you made mistakes in your
+                            past games.
+                            By re-solving these positions, you build pattern recognition and avoid making the same errors
+                            again.
+                        </p>
+                        <a href="/practice" class="btn btn-primary">Launch Blunder Buster →</a>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
-
-    <!-- Sidebar Content Column -->
-    <div style="display: flex; flex-direction: column; gap: 1.5rem;">
-        <!-- Quick Actions -->
-        <div class="card">
-            <h3 style="margin-bottom: 1.25rem; font-size: 1rem;">Quick Actions</h3>
-            <div style="display: flex; flex-direction: column; gap: 0.75rem;">
-                <a href="/games" class="task-item" style="text-decoration: none;">
-                    <div class="task-info">
-                        <h4>Import Games</h4>
-                        <p>Sync from Chess.com/Lichess</p>
-                    </div>
-                    <span style="font-size: 1.25rem;">⚡</span>
-                </a>
-                <a href="/practice-history" class="task-item" style="text-decoration: none;">
-                    <div class="task-info">
-                        <h4>Training History</h4>
-                        <p>Review past sessions</p>
-                    </div>
-                    <span style="font-size: 1.25rem;">📜</span>
-                </a>
-                <a href="/settings" class="task-item" style="text-decoration: none;">
-                    <div class="task-info">
-                        <h4>Settings</h4>
-                        <p>Manage accounts & engine</p>
-                    </div>
-                    <span style="font-size: 1.25rem;">⚙️</span>
-                </a>
+        <!-- Sidebar Content Column -->
+        <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+            <!-- Quick Actions -->
+            <div class="card">
+                <h3 style="margin-bottom: 1.25rem; font-size: 1rem;">Quick Actions</h3>
+                <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                    <a href="/games" class="task-item" style="text-decoration: none;">
+                        <div class="task-info">
+                            <h4>Import Games</h4>
+                            <p>Sync from Chess.com/Lichess</p>
+                        </div>
+                        <span style="font-size: 1.25rem;">⚡</span>
+                    </a>
+                    <a href="/practice-history"
+                       class="task-item"
+                       style="text-decoration: none">
+                        <div class="task-info">
+                            <h4>Training History</h4>
+                            <p>Review past sessions</p>
+                        </div>
+                        <span style="font-size: 1.25rem;">📜</span>
+                    </a>
+                    <a href="/settings" class="task-item" style="text-decoration: none;">
+                        <div class="task-info">
+                            <h4>Settings</h4>
+                            <p>Manage accounts & engine</p>
+                        </div>
+                        <span style="font-size: 1.25rem;">⚙️</span>
+                    </a>
+                </div>
+            </div>
+            <!-- Tips/Help Card -->
+            <div class="card"
+                 style="background: var(--bg-tertiary);
+                        border-style: dashed">
+                <h3 style="margin-bottom: 0.75rem;
+                           font-size: 0.9375rem;
+                           color: var(--accent-light)">Pro Tip</h3>
+                <p style="font-size: 0.8125rem;
+                          color: var(--text-muted);
+                          line-height: 1.5">
+                    Focus your practice sessions on **Middlegame Blunders**. This is where most games under 1800 ELO are
+                    decided!
+                </p>
             </div>
         </div>
-
-        <!-- Tips/Help Card -->
-        <div class="card" style="background: var(--bg-tertiary); border-style: dashed;">
-            <h3 style="margin-bottom: 0.75rem; font-size: 0.9375rem; color: var(--accent-light);">Pro Tip</h3>
-            <p style="font-size: 0.8125rem; color: var(--text-muted); line-height: 1.5;">
-                Focus your practice sessions on **Middlegame Blunders**. This is where most games under 1800 ELO are
-                decided!
-            </p>
-        </div>
     </div>
-</div>
 {% endblock %}
