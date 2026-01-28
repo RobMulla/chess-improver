@@ -567,6 +567,35 @@ def api_practice_positions():
     return jsonify({"session_id": session_id, "positions": result})
 
 
+@app.route("/api/engine/move", methods=["POST"])
+def api_engine_move():
+    """Get the engine's best move for a given FEN."""
+    from src.analysis.engine import StockfishAnalyzer
+
+    data = request.json
+    fen = data.get("fen")
+
+    if not fen:
+        return jsonify({"success": False, "error": "FEN is required"}), 400
+
+    try:
+        import chess
+
+        board = chess.Board(fen)
+        with StockfishAnalyzer() as analyzer:
+            result = analyzer.analyze_position(board)
+
+        return jsonify(
+            {
+                "success": True,
+                "best_move": result["best_move"],
+                "evaluation": result["evaluation"],
+            }
+        )
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
 @app.route("/api/practice/check", methods=["POST"])
 def api_practice_check():
     """Check user move against engine best move and save attempt."""

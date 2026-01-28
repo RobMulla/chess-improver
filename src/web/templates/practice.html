@@ -127,6 +127,8 @@
                             <button id="show-btn" class="btn btn-secondary" onclick="showAnswer()">Show Answer</button>
                             <button id="next-btn" class="btn btn-primary" onclick="nextPosition()"
                                 style="display: none;">Next Position →</button>
+                            <button id="continue-btn" class="btn btn-secondary" onclick="startPlayMode()"
+                                style="display: none;">🤖 Play vs Stockfish</button>
                         </div>
                     </div>
 
@@ -207,6 +209,7 @@
         let currentAttempt = null;
         let sessionId = null;
         let hasFailedThisPosition = false;
+        let isPlayMode = false;
 
         let historyFens = [];
         let currentHistoryIndex = 0;
@@ -350,7 +353,7 @@
             const turn = pos.game.player_color === 'white' ? 'w' : 'b';
             if (piece.search(new RegExp(`^${turn}`)) === -1) return false;
 
-            if (document.getElementById('next-btn').style.display !== 'none') return false;
+            if (document.getElementById('next-btn').style.display !== 'none' && !isPlayMode) return false;
         }
 
         function handleMove(source, target) {
@@ -362,8 +365,42 @@
 
             if (move === null) return 'snapback';
 
-            currentAttempt = move.from + move.to + (move.promotion || '');
-            checkMove();
+            if (isPlayMode) {
+                board.position(game.fen());
+                engineMove();
+            } else {
+                currentAttempt = move.from + move.to + (move.promotion || '');
+                checkMove();
+            }
+        }
+
+        async function engineMove() {
+            const response = await fetch('/api/engine/move', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ fen: game.fen() })
+            });
+            const data = await response.json();
+            if (data.success && data.best_move) {
+                game.move(data.best_move, { sloppy: true });
+                board.position(game.fen());
+
+                if (game.game_over()) {
+                    alert('Game Over!');
+                }
+            }
+        }
+
+        function startPlayMode() {
+            isPlayMode = true;
+            document.getElementById('continue-btn').style.display = 'none';
+            document.getElementById('next-btn').style.display = 'none';
+
+            const feedbackPanel = document.getElementById('feedback-panel');
+            feedbackPanel.style.display = 'block';
+            feedbackPanel.style.background = 'var(--accent-primary-o10)';
+            feedbackPanel.style.color = 'var(--accent-primary)';
+            feedbackPanel.innerHTML = '<strong>🤖 Play Mode:</strong> Practice is over, you are now playing against Stockfish.';
         }
 
         async function checkMove() {
@@ -391,6 +428,7 @@
                 document.getElementById('show-btn').style.display = 'none';
                 document.getElementById('hint-btn').style.display = 'none';
                 document.getElementById('next-btn').style.display = 'inline-block';
+                document.getElementById('continue-btn').style.display = 'inline-block';
 
                 feedbackPanel.style.display = 'block';
                 feedbackPanel.style.background = 'var(--success-bg)';
@@ -450,6 +488,7 @@
             document.getElementById('show-btn').style.display = 'none';
             document.getElementById('hint-btn').style.display = 'none';
             document.getElementById('next-btn').style.display = 'inline-block';
+            document.getElementById('continue-btn').style.display = 'inline-block';
 
             drawSolutionArrow(pos.best_move);
         }
