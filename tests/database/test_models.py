@@ -1,21 +1,7 @@
 """Test suite for chess improvement system."""
-import os
 from datetime import datetime
 
-import pytest
-
-from src.database.models import Game, Opening, Position, get_session, init_db
-
-
-@pytest.fixture
-def test_db():
-    """Create test database."""
-    os.environ["DATABASE_URL"] = "sqlite:///test_chess.db"
-    init_db()
-    yield
-    # Cleanup
-    if os.path.exists("test_chess.db"):
-        os.remove("test_chess.db")
+from src.database.models import Game, Opening, Position, get_session
 
 
 class TestDatabase:
