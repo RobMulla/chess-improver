@@ -466,8 +466,8 @@ tr:hover {
 }
 
 .compact-card {
-    margin-bottom: 1rem;
-    padding: var(--spacing-lg);
+    margin-bottom: 0.75rem;
+    padding: var(--spacing-md);
 }
 
 .info-grid {
@@ -553,7 +553,7 @@ tr:hover {
 /* Game Viewer Styles */
 .game-layout {
     display: grid;
-    grid-template-columns: 1fr 400px;
+    grid-template-columns: 1fr 320px;
     gap: 1.5rem;
     align-items: start;
 }
@@ -567,10 +567,11 @@ tr:hover {
 
 .move-item {
     cursor: pointer;
-    padding: 0.25rem 0.5rem;
+    padding: 0.15rem 0.4rem;
     border-radius: 4px;
     background: var(--bg-tertiary);
     transition: all 0.1s ease;
+    font-size: 0.85rem;
 }
 
 .move-item:hover {
@@ -671,8 +672,8 @@ tr:hover {
 /* .game-sidebar definition removed as it was redundant and incomplete */
 
 .compact-card {
-    margin-bottom: 1rem;
-    padding: var(--spacing-lg);
+    margin-bottom: 0.75rem;
+    padding: var(--spacing-md);
 }
 
 .info-grid {

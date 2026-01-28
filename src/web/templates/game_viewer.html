@@ -417,21 +417,21 @@
                 // Move Number
                 const numCell = document.createElement('td');
                 numCell.className = 'text-center text-muted';
-                numCell.style.padding = '0.5rem';
-                numCell.style.width = '40px';
-                numCell.style.fontSize = '0.9em';
+                numCell.style.padding = '0.25rem 0.4rem';
+                numCell.style.width = '30px';
+                numCell.style.fontSize = '0.8em';
                 numCell.textContent = moveNum + '.';
                 row.appendChild(numCell);
 
                 // White Move
                 const whiteCell = document.createElement('td');
-                whiteCell.style.padding = '0.5rem';
+                whiteCell.style.padding = '0.25rem 0.4rem';
                 whiteCell.appendChild(createMoveSpan(whiteMove, i));
                 row.appendChild(whiteCell);
 
                 // Black Move
                 const blackCell = document.createElement('td');
-                blackCell.style.padding = '0.5rem';
+                blackCell.style.padding = '0.25rem 0.4rem';
                 if (blackMove) {
                     blackCell.appendChild(createMoveSpan(blackMove, i + 1));
                 }
