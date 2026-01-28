@@ -130,3 +130,17 @@ def test_practice_give_up(client):
     result = check_resp.json
     assert result["correct"] is False
     assert result["best_move"] == "e2e4"
+
+
+def test_practice_sessions_history(client):
+    """Test fetching session history."""
+    # Create a session first by fetching positions
+    client.get("/api/practice/positions")
+
+    response = client.get("/api/practice/sessions")
+    assert response.status_code == 200
+    data = response.json
+
+    assert "sessions" in data
+    assert len(data["sessions"]) > 0
+    assert data["sessions"][0]["total"] > 0
