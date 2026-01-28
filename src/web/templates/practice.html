@@ -264,6 +264,22 @@
             });
 
             fetchRecentSessions();
+
+            // Keyboard Navigation
+            document.addEventListener('keydown', (e) => {
+                // Only if board is visible
+                if (document.getElementById('practice-panel').style.display === 'none') return;
+
+                if (e.key === 'ArrowLeft') {
+                    navigateHistory(currentHistoryIndex - 1);
+                } else if (e.key === 'ArrowRight') {
+                    navigateHistory(currentHistoryIndex + 1);
+                } else if (e.key === 'ArrowUp') {
+                    navigateHistory(0); // Go to start
+                } else if (e.key === 'ArrowDown') {
+                    navigateHistory(historyFens.length - 1); // Go to current
+                }
+            });
         });
 
         async function fetchRecentSessions() {
