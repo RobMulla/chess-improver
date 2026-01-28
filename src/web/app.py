@@ -190,7 +190,7 @@ def daily_plan(date_str=None):
 def generate_plan():
     """Generate new daily plan."""
     generator = PlanGenerator()
-    plan = generator.generate_plan()
+    generator.generate_plan()
     generator.close()
 
     return redirect(url_for("daily_plan"))
@@ -480,7 +480,7 @@ def openings_list():
             ).label("wins"),
             func.sum(case((Game.result == "1/2-1/2", 1), else_=0)).label("draws"),
         )
-        .filter(Game.opening_name != None)
+        .filter(Game.opening_name.isnot(None))
         .filter(Game.opening_name != "")
     )
 
@@ -570,14 +570,14 @@ def api_practice_positions():
 
     # Mistake Type Filter
     if mistake_type == "blunder":
-        query = query.filter(Position.is_blunder == True)
+        query = query.filter(Position.is_blunder.is_(True))
     elif mistake_type == "mistake":
-        query = query.filter(Position.is_mistake == True)
+        query = query.filter(Position.is_mistake.is_(True))
     else:
         # Both (Mistake OR Blunder)
         from sqlalchemy import or_
 
-        query = query.filter(or_(Position.is_mistake == True, Position.is_blunder == True))
+        query = query.filter(or_(Position.is_mistake.is_(True), Position.is_blunder.is_(True)))
 
     # Phase Filter
     if phase != "all":
@@ -670,6 +670,44 @@ def api_practice_check():
     return jsonify(response)
 
 
+@app.route("/practice-history")
+def practice_history():
+    """Practice session history page."""
+    return render_template("practice_history.html")
+
+
+@app.route("/api/practice/sessions")
+def api_practice_sessions():
+    """Get all practice sessions with stats."""
+    from src.database.models import PracticeSession
+
+    session = get_session()
+
+    # Query all sessions ordered by date (newest first)
+    sessions_query = (
+        session.query(PracticeSession).order_by(PracticeSession.created_at.desc()).all()
+    )
+
+    result = []
+    for ps in sessions_query:
+        # Calculate accuracy
+        accuracy = (ps.score / ps.total_positions * 100) if ps.total_positions > 0 else 0
+
+        result.append(
+            {
+                "id": ps.id,
+                "date": ps.created_at.isoformat() if ps.created_at else None,
+                "score": ps.score,
+                "total": ps.total_positions,
+                "accuracy": round(accuracy, 1),
+                "settings": ps.settings or {},
+            }
+        )
+
+    session.close()
+    return jsonify({"sessions": result})
+
+
 @app.route("/moves")
 def moves_browser():
     """Browse all analyzed positions/moves."""
@@ -699,7 +737,7 @@ def moves_browser():
 
     # Get total count
     total_positions = query.count()
-    total_games = session.query(Game).filter(Game.analyzed == True).count()
+    total_games = session.query(Game).filter(Game.analyzed.is_(True)).count()
 
     # Get paginated results
     positions = (

@@ -1,0 +1,268 @@
+{% extends "base.html" %}
+
+{% block title %}Practice History{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width: 1200px; margin: 0 auto; padding: 2rem;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+        <h1>Practice History</h1>
+        <a href="/practice"
+            style="padding: 0.75rem 1.5rem; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; text-decoration: none; border-radius: 8px; font-weight: 600;">
+            ← Back to Practice
+        </a>
+    </div>
+
+    <div id="sessions-container">
+        <div style="text-align: center; padding: 3rem; color: #888;">
+            <div class="spinner"
+                style="width: 40px; height: 40px; margin: 0 auto 1rem; border: 4px solid #f3f3f3; border-top: 4px solid #667eea; border-radius: 50%; animation: spin 1s linear infinite;">
+            </div>
+            Loading sessions...
+        </div>
+    </div>
+</div>
+
+<style>
+    @keyframes spin {
+        0% {
+            transform: rotate(0deg);
+        }
+
+        100% {
+            transform: rotate(360deg);
+        }
+    }
+
+    .sessions-table {
+        width: 100%;
+        border-collapse: collapse;
+        background: white;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .sessions-table thead {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+
+    .sessions-table th {
+        padding: 1rem;
+        text-align: left;
+        font-weight: 600;
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .sessions-table td {
+        padding: 1rem;
+        border-bottom: 1px solid #eee;
+    }
+
+    .sessions-table tbody tr:hover {
+        background-color: #f8f9fa;
+    }
+
+    .sessions-table tbody tr:last-child td {
+        border-bottom: none;
+    }
+
+    .accuracy-badge {
+        display: inline-block;
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-weight: 600;
+        font-size: 0.9rem;
+    }
+
+    .accuracy-excellent {
+        background-color: #d4edda;
+        color: #155724;
+    }
+
+    .accuracy-good {
+        background-color: #fff3cd;
+        color: #856404;
+    }
+
+    .accuracy-poor {
+        background-color: #f8d7da;
+        color: #721c24;
+    }
+
+    .settings-pill {
+        display: inline-block;
+        padding: 0.25rem 0.5rem;
+        margin: 0.125rem;
+        background-color: #e9ecef;
+        border-radius: 4px;
+        font-size: 0.85rem;
+        color: #495057;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 4rem 2rem;
+        color: #888;
+    }
+
+    .empty-state svg {
+        width: 100px;
+        height: 100px;
+        margin-bottom: 1rem;
+        opacity: 0.5;
+    }
+</style>
+
+<script>
+    async function loadSessions() {
+        const container = document.getElementById('sessions-container');
+
+        try {
+            const response = await fetch('/api/practice/sessions');
+            const data = await response.json();
+
+            if (data.sessions && data.sessions.length > 0) {
+                renderSessionsTable(data.sessions);
+            } else {
+                renderEmptyState();
+            }
+        } catch (error) {
+            console.error('Error loading sessions:', error);
+            container.innerHTML = `
+                <div class="empty-state">
+                    <p style="color: #dc3545; font-size: 1.1rem;">❌ Error loading sessions</p>
+                    <p style="margin-top: 0.5rem; color: #888;">Please try again later</p>
+                </div>
+            `;
+        }
+    }
+
+    function renderSessionsTable(sessions) {
+        const container = document.getElementById('sessions-container');
+
+        const table = document.createElement('table');
+        table.className = 'sessions-table';
+
+        // Header
+        table.innerHTML = `
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Score</th>
+                    <th>Accuracy</th>
+                    <th>Filters</th>
+                </tr>
+            </thead>
+            <tbody>
+            </tbody>
+        `;
+
+        const tbody = table.querySelector('tbody');
+
+        sessions.forEach(session => {
+            const row = document.createElement('tr');
+
+            // Format date
+            const date = new Date(session.date);
+            const dateStr = date.toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+
+            // Accuracy badge
+            let accuracyClass = 'accuracy-poor';
+            if (session.accuracy >= 80) accuracyClass = 'accuracy-excellent';
+            else if (session.accuracy >= 60) accuracyClass = 'accuracy-good';
+
+            // Settings pills
+            const settings = session.settings || {};
+            const settingsPills = [];
+
+            if (settings.color && settings.color !== 'both') {
+                settingsPills.push(`<span class="settings-pill">🎨 ${settings.color}</span>`);
+            }
+            if (settings.mistake_type && settings.mistake_type !== 'both') {
+                settingsPills.push(`<span class="settings-pill">⚠️ ${settings.mistake_type}</span>`);
+            }
+            if (settings.phase && settings.phase !== 'all') {
+                settingsPills.push(`<span class="settings-pill">🎯 ${settings.phase}</span>`);
+            }
+            if (settings.date_from || settings.date_to) {
+                settingsPills.push(`<span class="settings-pill">📅 Date Range</span>`);
+            }
+
+            row.innerHTML = `
+                <td>${dateStr}</td>
+                <td style="font-weight: 600; font-size: 1.1rem;">${session.score} / ${session.total}</td>
+                <td>
+                    <span class="accuracy-badge ${accuracyClass}">
+                        ${session.accuracy}%
+                    </span>
+                </td>
+                <td>${settingsPills.join(' ') || '<span style="color: #888;">None</span>'}</td>
+            `;
+
+            tbody.appendChild(row);
+        });
+
+        container.innerHTML = '';
+        container.appendChild(table);
+
+        // Add summary stats
+        const summary = document.createElement('div');
+        summary.style.cssText = 'margin-top: 2rem; padding: 1.5rem; background: #f8f9fa; border-radius: 12px; text-align: center;';
+
+        const totalSessions = sessions.length;
+        const avgAccuracy = (sessions.reduce((sum, s) => sum + s.accuracy, 0) / totalSessions).toFixed(1);
+        const totalPositions = sessions.reduce((sum, s) => sum + s.total, 0);
+        const totalCorrect = sessions.reduce((sum, s) => sum + s.score, 0);
+
+        summary.innerHTML = `
+            <h3 style="margin-bottom: 1rem; color: #495057;">📊 Overall Statistics</h3>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; font-size: 1.1rem;">
+                <div>
+                    <div style="color: #888; font-size: 0.9rem; margin-bottom: 0.25rem;">Total Sessions</div>
+                    <div style="font-weight: 700; font-size: 1.5rem; color: #667eea;">${totalSessions}</div>
+                </div>
+                <div>
+                    <div style="color: #888; font-size: 0.9rem; margin-bottom: 0.25rem;">Average Accuracy</div>
+                    <div style="font-weight: 700; font-size: 1.5rem; color: #764ba2;">${avgAccuracy}%</div>
+                </div>
+                <div>
+                    <div style="color: #888; font-size: 0.9rem; margin-bottom: 0.25rem;">Total Positions</div>
+                    <div style="font-weight: 700; font-size: 1.5rem; color: #28a745;">${totalPositions}</div>
+                </div>
+                <div>
+                    <div style="color: #888; font-size: 0.9rem; margin-bottom: 0.25rem;">Total Correct</div>
+                    <div style="font-weight: 700; font-size: 1.5rem; color: #17a2b8;">${totalCorrect}</div>
+                </div>
+            </div>
+        `;
+
+        container.appendChild(summary);
+    }
+
+    function renderEmptyState() {
+        const container = document.getElementById('sessions-container');
+        container.innerHTML = `
+            <div class="empty-state">
+                <div style="font-size: 4rem; margin-bottom: 1rem;">📚</div>
+                <h2 style="color: #495057; margin-bottom: 0.5rem;">No Practice Sessions Yet</h2>
+                <p style="color: #888; margin-bottom: 2rem;">Start a practice session to see your history here</p>
+                <a href="/practice" style="display: inline-block; padding: 0.75rem 1.5rem; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; text-decoration: none; border-radius: 8px; font-weight: 600;">
+                    Start Practicing
+                </a>
+            </div>
+        `;
+    }
+
+    // Load sessions on page load
+    document.addEventListener('DOMContentLoaded', loadSessions);
+</script>
+{% endblock %}
